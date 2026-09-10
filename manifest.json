@@ -1,0 +1,17 @@
+{
+  "name": "小ci · 电子宠物",
+  "short_name": "小ci",
+  "description": "LouFoong 的电子宠物刺猬",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0f",
+  "theme_color": "#58a6ff",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "idle-1.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "idle-1.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "happy.png",  "sizes": "192x192", "type": "image/png", "purpose": "maskable" }
+  ]
+}
