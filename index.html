@@ -22,7 +22,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 独立打开时给个好看的背景 */
         body.standalone {
             background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
         }
@@ -110,7 +109,6 @@
             justify-content: center;
         }
 
-        /* 光晕背景 */
         .pet-body::before {
             content: '';
             position: absolute;
@@ -133,7 +131,6 @@
             }
         }
 
-        /* 宠物图片 */
         .hedgehog-img {
             width: 100%;
             height: 100%;
@@ -158,7 +155,6 @@
             }
         }
 
-        /* 点击挤压动画 */
         .pet-wrapper.clicked .hedgehog-img {
             animation: squash 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -170,14 +166,57 @@
             100% { transform: scale(1, 1); }
         }
 
-        /* 睡觉状态（慢速呼吸） */
+        /* 睡觉状态（慢速呼吸 + 轻微摇晃） */
         .pet-wrapper.sleeping .hedgehog-img {
             animation: sleep-breath 4s ease-in-out infinite;
         }
 
         @keyframes sleep-breath {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.04) translateY(-2px); }
+            0%, 100% { transform: scale(1) rotate(-1deg); }
+            50% { transform: scale(1.04) translateY(-2px) rotate(1deg); }
+        }
+
+        /* ================================================================
+           睡觉时飘出的 Zzz
+        ================================================================ */
+        .sleep-zzz {
+            position: absolute;
+            top: 0;
+            right: -10px;
+            font-size: 20px;
+            font-weight: bold;
+            color: rgba(88, 166, 255, 0.9);
+            pointer-events: none;
+            opacity: 0;
+            text-shadow: 0 2px 8px rgba(88, 166, 255, 0.5);
+            z-index: 2;
+        }
+
+        .pet-wrapper.sleeping .sleep-zzz {
+            animation: zzz-float 3s ease-in-out infinite;
+        }
+
+        @keyframes zzz-float {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(0.6);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(-5px, -10px) scale(0.9);
+            }
+            50% {
+                opacity: 0.8;
+                transform: translate(-12px, -25px) scale(1.1);
+            }
+            80% {
+                opacity: 0.3;
+                transform: translate(-18px, -40px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-25px, -55px) scale(1.3);
+            }
         }
 
         /* ================================================================
@@ -194,13 +233,12 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
             opacity: 0;
-            transform: translateY(8px);
+            transform: translateX(-50%) translateY(8px);
             transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
             pointer-events: none;
             position: absolute;
             top: -44px;
             left: 50%;
-            transform: translateX(-50%) translateY(8px);
         }
 
         .pet-wrapper:hover .pet-toolbar,
@@ -290,7 +328,6 @@
             }
         }
 
-        /* 减少动画偏好 */
         @media (prefers-reduced-motion: reduce) {
             .hedgehog-img,
             .pet-body::before {
@@ -319,7 +356,9 @@
 
         <!-- 宠物本体 -->
         <div class="pet-body" id="petBody">
-            <img class="hedgehog-img" id="hedgehogImg" src="images/idle-1.png" alt="小刺猬">
+            <img class="hedgehog-img" id="hedgehogImg" src="idle-1.png" alt="小刺猬">
+            <!-- 睡觉时飘出的 Zzz -->
+            <div class="sleep-zzz">💤</div>
         </div>
     </div>
 
@@ -332,16 +371,17 @@
         }
 
         // ================================================================
-        // 配置
+        // 配置：图片全在根目录
         // ================================================================
         const IMAGES = {
-    idle1: 'idle-1.png',
-    idle2: 'idle-2.png',
-    blink: 'blink.png',
-    surprised: 'surprised.png',
-    happy: 'happy.png',
-    angry: 'angry.png'
-};
+            idle1: 'idle-1.png',
+            idle2: 'idle-2.png',
+            blink: 'blink.png',
+            surprised: 'surprised.png',
+            happy: 'happy.png',
+            angry: 'angry.png',
+            sleep: 'sleep.png'
+        };
 
         // 点击次数对应的消息
         const CLICK_MESSAGES = {
@@ -389,7 +429,7 @@
         // 状态
         // ================================================================
         let clickCount = 0;
-        let currentState = 'idle1';  // idle1 / idle2 / blink / surprised / happy / angry
+        let currentState = 'idle1';
         let isSleeping = false;
         let lastInteraction = Date.now();
         let bubbleTimer = null;
@@ -401,11 +441,10 @@
         let wrapperStartY = 0;
         let hasMoved = false;
 
-        // 位置记忆
         const POSITION_KEY = 'ciwei_pet_position';
 
         // ================================================================
-        // 预加载所有图片
+        // 预加载图片
         // ================================================================
         function preloadImages() {
             Object.values(IMAGES).forEach(src => {
@@ -424,7 +463,7 @@
         }
 
         // ================================================================
-        // 显示气泡消息
+        // 气泡
         // ================================================================
         function showBubble(message, duration = 3000) {
             bubble.textContent = message;
@@ -435,9 +474,6 @@
             }, duration);
         }
 
-        // ================================================================
-        // 显示随机消息
-        // ================================================================
         function randomMessage(list) {
             return list[Math.floor(Math.random() * list.length)];
         }
@@ -457,7 +493,6 @@
                 particle.style.left = (centerX - 10) + 'px';
                 particle.style.top = (centerY - 10) + 'px';
 
-                // 随机飞行方向
                 const angle = (Math.random() * 360) * Math.PI / 180;
                 const distance = 40 + Math.random() * 40;
                 const dx = Math.cos(angle) * distance;
@@ -467,31 +502,25 @@
                 particle.style.setProperty('--dx', dx + 'px');
                 particle.style.setProperty('--dy', dy + 'px');
                 particle.style.setProperty('--rot', rot + 'deg');
-
-                // 随机延迟
                 particle.style.animationDelay = (Math.random() * 0.15) + 's';
 
                 particlesLayer.appendChild(particle);
-
-                // 动画结束后移除
-                setTimeout(() => {
-                    particle.remove();
-                }, 1500);
+                setTimeout(() => particle.remove(), 1500);
             }
         }
 
         // ================================================================
-        // 待机呼吸动画（每 1 秒切换一次）
+        // 待机呼吸动画
         // ================================================================
         setInterval(() => {
-            if (isSleeping) return; // 睡觉时不呼吸
+            if (isSleeping) return;
             if (currentState === 'idle1' || currentState === 'idle2') {
                 setImage(currentState === 'idle1' ? 'idle2' : 'idle1');
             }
         }, 1000);
 
         // ================================================================
-        // 随机眨眼（每 3-8 秒一次）
+        // 随机眨眼
         // ================================================================
         function scheduleBlink() {
             const delay = 3000 + Math.random() * 5000;
@@ -511,27 +540,27 @@
         scheduleBlink();
 
         // ================================================================
-        // 处理点击
+        // 点击处理
         // ================================================================
         function handleClick() {
-            if (isDragging) return; // 拖动时不触发点击
+            if (isDragging) return;
 
             lastInteraction = Date.now();
 
-            // 如果正在睡觉，先唤醒
+            // 睡觉时点击唤醒
             if (isSleeping) {
                 isSleeping = false;
                 wrapper.classList.remove('sleeping');
                 setImage('idle1');
                 showBubble('唔……醒啦！');
+                createParticles('✨', 4);
                 return;
             }
 
             clickCount++;
 
-            // 根据次数切换表情和消息
             let message = '';
-            let newImg = 'surprised';
+            let newImg = 'happy';
 
             if (CLICK_MESSAGES[clickCount]) {
                 message = CLICK_MESSAGES[clickCount];
@@ -541,7 +570,6 @@
                 message = randomMessage(RANDOM_MESSAGES);
             }
 
-            // 根据次数选择表情
             if (clickCount >= 8) {
                 newImg = 'angry';
             } else if (clickCount >= 3) {
@@ -554,10 +582,9 @@
             showBubble(message);
             wrapper.classList.add('clicked');
 
-            // 粒子效果
             if (clickCount >= 8) {
                 createParticles('💢', 3);
-            } else if (clickCount >= 1) {
+            } else {
                 createParticles('✨', 3);
             }
 
@@ -565,7 +592,6 @@
                 wrapper.classList.remove('clicked');
             }, 400);
 
-            // 1.5 秒后恢复
             clearTimeout(resetTimer);
             resetTimer = setTimeout(() => {
                 if (!isSleeping) {
@@ -576,10 +602,9 @@
         }
 
         // ================================================================
-        // 拖拽功能
+        // 拖拽
         // ================================================================
         function handleDragStart(e) {
-            // 忽略工具栏点击
             if (e.target.closest('.pet-toolbar')) return;
 
             isDragging = true;
@@ -594,7 +619,6 @@
             wrapperStartX = rect.left;
             wrapperStartY = rect.top;
 
-            // 改成 left/top 定位，方便拖动
             wrapper.style.left = wrapperStartX + 'px';
             wrapper.style.top = wrapperStartY + 'px';
             wrapper.style.right = 'auto';
@@ -622,13 +646,11 @@
             isDragging = false;
             wrapper.classList.remove('dragging');
 
-            // 如果没移动过，当作点击处理
             if (!hasMoved) {
                 handleClick();
                 return;
             }
 
-            // 边界检测（防止拖出屏幕）
             const rect = wrapper.getBoundingClientRect();
             const maxX = window.innerWidth - rect.width;
             const maxY = window.innerHeight - rect.height;
@@ -638,7 +660,6 @@
             wrapper.style.left = finalX + 'px';
             wrapper.style.top = finalY + 'px';
 
-            // 保存位置
             try {
                 localStorage.setItem(POSITION_KEY, JSON.stringify({
                     x: finalX,
@@ -648,21 +669,18 @@
             } catch (err) {}
         }
 
-        // 鼠标事件
         wrapper.addEventListener('mousedown', handleDragStart);
         document.addEventListener('mousemove', handleDragMove);
         document.addEventListener('mouseup', handleDragEnd);
 
-        // 触摸事件
         wrapper.addEventListener('touchstart', handleDragStart, { passive: true });
         document.addEventListener('touchmove', handleDragMove, { passive: false });
         document.addEventListener('touchend', handleDragEnd);
 
-        // 阻止默认拖拽行为
         img.addEventListener('dragstart', e => e.preventDefault());
 
         // ================================================================
-        // 工具栏按钮
+        // 工具栏
         // ================================================================
         toolbar.addEventListener('click', function(e) {
             const btn = e.target.closest('.toolbar-btn');
@@ -677,25 +695,33 @@
                     setImage('happy');
                     showBubble('嘿嘿～好开心！');
                     createParticles('❤️', 6);
-                    setTimeout(() => setImage('idle1'), 1500);
+                    setTimeout(() => {
+                        if (!isSleeping) setImage('idle1');
+                    }, 1500);
                     break;
 
                 case 'food':
                     setImage('happy');
                     showBubble('🍎 好吃！谢谢～');
                     createParticles('🍎', 4);
-                    setTimeout(() => setImage('idle1'), 1500);
+                    setTimeout(() => {
+                        if (!isSleeping) setImage('idle1');
+                    }, 1500);
                     break;
 
                 case 'sleep':
                     if (isSleeping) {
+                        // 唤醒
                         isSleeping = false;
                         wrapper.classList.remove('sleeping');
                         setImage('idle1');
                         showBubble('睡醒啦！');
+                        createParticles('✨', 4);
                     } else {
+                        // 哄睡
                         isSleeping = true;
                         wrapper.classList.add('sleeping');
+                        setImage('sleep');
                         showBubble('晚安～');
                         createParticles('💤', 3);
                     }
@@ -715,16 +741,17 @@
         });
 
         // ================================================================
-        // 空闲时自己说话（每 30-60 秒）
+        // 空闲说话
         // ================================================================
         function scheduleIdleTalk() {
             const delay = 30000 + Math.random() * 30000;
             setTimeout(() => {
                 if (Date.now() - lastInteraction > 20000 && !isSleeping) {
                     if (Math.random() < 0.3) {
-                        // 30% 概率进入睡觉状态
+                        // 自动睡觉
                         isSleeping = true;
                         wrapper.classList.add('sleeping');
+                        setImage('sleep');
                         showBubble('好困……我先睡一会儿');
                         createParticles('💤', 3);
                     } else {
@@ -736,9 +763,7 @@
         }
         scheduleIdleTalk();
 
-        // ================================================================
-        // 睡觉时偶尔说话
-        // ================================================================
+        // 睡觉时偶尔说梦话
         setInterval(() => {
             if (isSleeping && Math.random() < 0.3) {
                 showBubble(randomMessage(SLEEP_MESSAGES));
@@ -746,7 +771,7 @@
         }, 15000);
 
         // ================================================================
-        // 恢复上次位置
+        // 恢复位置
         // ================================================================
         function restorePosition() {
             try {
@@ -763,9 +788,7 @@
             } catch (err) {}
         }
 
-        // ================================================================
         // 窗口大小改变时调整位置
-        // ================================================================
         window.addEventListener('resize', function() {
             const rect = wrapper.getBoundingClientRect();
             const maxX = window.innerWidth - rect.width;
@@ -784,13 +807,12 @@
         preloadImages();
         restorePosition();
 
-        // 页面加载 1.5 秒后主动打招呼
         setTimeout(() => {
             showBubble('你好呀～我是小刺猬');
             createParticles('✨', 4);
         }, 1500);
 
-        console.log('🦔 小刺猬宠物已启动（完整功能版）');
+        console.log('🦔 小刺猬宠物已启动（含睡觉模式）');
     </script>
 
 </body>
