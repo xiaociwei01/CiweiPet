@@ -81,13 +81,7 @@ body[data-fps="low"] {
 }
 
 #ciwei-pet .cp-body::before {
-    content: '';
-    position: absolute; inset: -14px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--cp-accent), .24) 0%, transparent 70%);
-    animation: cp-pulseGlow var(--cp-glow) ease-in-out infinite;
-    pointer-events: none; z-index: 0;
-    transition: background .8s ease;
+    display: none;
 }
 @keyframes cp-pulseGlow {
     0%, 100% { transform: scale(1); opacity: .55; }
@@ -156,8 +150,8 @@ body[data-fps="low"] #ciwei-pet .cp-body::before { animation: none; opacity: .35
     100% { transform: scale(1, 1); }
 }
 
-#ciwei-pet.spin .cp-body {
-    animation: cp-spin .85s cubic-bezier(.34,1.56,.64,1) !important;
+#ciwei-pet.spin .cp-tilt {
+    animation: cp-spin .85s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes cp-spin {
     0%   { transform: rotate(0deg) scale(1); }
@@ -666,10 +660,6 @@ body[data-fps="low"] #ciwei-pet .cp-toolbar {
         🔊 <span>音效</span>
         <span class="cp-sub-check" id="cp-sound-check">开启</span>
     </div>
-    <div class="cp-sub-item" data-menu="fps">
-        📊 <span>帧率</span>
-        <span class="cp-sub-check" id="cp-fps-check">--</span>
-    </div>
     <div class="cp-sep"></div>
     <div class="cp-sub-item danger" data-menu="hide">🙈 <span>隐藏</span></div>
 </div>
@@ -837,7 +827,6 @@ var lightEl      = host.querySelector('.cp-light');
 var bubble       = host.querySelector('.cp-bubble');
 var toolbar      = host.querySelector('.cp-toolbar');
 var soundChk     = document.getElementById('cp-sound-check');
-var fpsChk       = document.getElementById('cp-fps-check');
 var scaleChk     = document.getElementById('cp-scale-check');
 
 // ============================================================
@@ -887,7 +876,6 @@ function tickFPS(now) {
         if (measuredFPS >= 90) cls = 'high';
         else if (measuredFPS < 45) cls = 'low';
         document.body.dataset.fps = cls;
-        if (fpsChk) fpsChk.textContent = measuredFPS + 'fps';
         fpsFrames = 0; fpsStart = now;
     }
 }
@@ -1774,7 +1762,6 @@ function showSubmenu() {
 
     // 更新显示
     soundChk.textContent = S.soundOn ? '开启' : '关闭';
-    fpsChk.textContent = measuredFPS + 'fps';
     updateScaleDisplay();
 
     // 边界调整
