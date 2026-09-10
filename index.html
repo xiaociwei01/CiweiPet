@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🦔 小刺猬宠物</title>
+
+<!-- ==================== PWA ==================== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#58a6ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="小刺猬">
+
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -437,7 +445,7 @@ body[data-fps="low"] #ciwei-pet .cp-toolbar {
 }
 </style>
 </head>
-<body>
+<body class="standalone">
 
 <!-- 粒子层 -->
 <div id="ciwei-pet-particles"></div>
@@ -1490,11 +1498,26 @@ window.addEventListener('beforeunload', function () {
     lsSet(KEYS.last, String(S.last));
 });
 
+// ============================================================
+// Service Worker 注册（PWA）
+// ============================================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js')
+            .then(function (reg) {
+                console.log('✅ SW 已注册:', reg.scope);
+            })
+            .catch(function (err) {
+                console.warn('SW 注册失败:', err);
+            });
+    });
+}
+
 console.log('%c🦔 CiweiPet 独立版 v2 已启动', 'font-size:16px;color:#58a6ff;font-weight:bold');
 console.log('⚡ ' + measuredFPS + 'fps · ' + getScalePercent() + '%');
 console.log('✨ 全部功能：缩放 · 长按菜单 · 音效 · 帧率自适应 · 视线跟随 · 环境光');
 console.log('       拖拽挣扎 · 惯性滑动 · 撞墙反弹 · 智能避让 · 自主漫游 · 双击走位');
-console.log('       边缘吸附 · 心情系统 · 打字机气泡 · 彩蛋 · 后台省电');
+console.log('       边缘吸附 · 心情系统 · 打字机气泡 · 彩蛋 · 后台省电 · PWA');
 
 })();
 </script>
