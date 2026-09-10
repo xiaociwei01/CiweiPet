@@ -3,15 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🦔 小刺猬宠物</title>
-
-<!-- ==================== PWA ==================== -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#58a6ff">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="小刺猬">
-
+<title>🦔 小ci · 电子宠物</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -198,7 +190,7 @@ body[data-fps="low"] #ciwei-pet .cp-body::before { animation: none; opacity: .35
     100% { opacity: 0; transform: translate(-26px, -54px) scale(1.25); }
 }
 
-/* ==================== 气泡 ==================== */
+/* ==================== 气泡（关键修复：横向单行优先） ==================== */
 #ciwei-pet .cp-bubble {
     position: absolute;
     left: 50%; bottom: calc(100% + 10px);
@@ -207,21 +199,32 @@ body[data-fps="low"] #ciwei-pet .cp-body::before { animation: none; opacity: .35
     color: #fff;
     padding: 8px 14px;
     border-radius: 14px 14px 4px 14px;
-    font-size: 13px; font-weight: 500; line-height: 1.4;
+    font-size: 13px; font-weight: 500; line-height: 1.5;
     box-shadow: 0 6px 20px rgba(0,0,0,.28);
-    max-width: 200px; min-height: 30px;
+    /* 关键：让气泡撑开宽度，不被父容器限制 */
+    width: max-content;
+    max-width: 280px;
+    min-width: 60px;
+    /* 文字不强制换行，超宽才换 */
+    white-space: nowrap;
+    word-break: normal;
+    text-align: left;
     opacity: 0;
     transition: all var(--cp-bubble) cubic-bezier(.22,1,.36,1);
     pointer-events: none;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,.1);
-    white-space: nowrap;
     z-index: 10;
 }
 #ciwei-pet .cp-bubble.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1);
+}
+/* 超过 max-width 时才允许换行 */
+#ciwei-pet .cp-bubble.long {
+    white-space: normal;
+    word-break: break-word;
 }
 #ciwei-pet .cp-bubble::after {
     content: '';
@@ -249,6 +252,7 @@ body[data-fps="low"] #ciwei-pet .cp-body::before { animation: none; opacity: .35
     border-top: 1px solid rgba(255,255,255,.1);
     border-radius: 2px 0 0 0;
 }
+/* 靠近屏幕边缘时，气泡居中对齐可能溢出，用小尺寸模式 */
 body[data-fps="low"] #ciwei-pet .cp-bubble {
     backdrop-filter: none; -webkit-backdrop-filter: none;
     background: rgba(30, 30, 45, .98);
@@ -329,39 +333,93 @@ body[data-fps="low"] #ciwei-pet .cp-toolbar {
                      scale(1.15) rotate(var(--rot)); }
 }
 
-/* ==================== 菜单 ==================== */
+/* ==================== 主菜单：横排图标条 ==================== */
 #ciwei-pet-menu {
     position: fixed;
     background: rgba(28, 28, 42, .96);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
     border: 1px solid rgba(255,255,255,.1);
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 5px;
     box-shadow: 0 12px 36px rgba(0,0,0,.4);
     z-index: 100000;
     display: none;
-    min-width: 160px;
-    max-height: 72vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
     font-family: -apple-system, 'PingFang SC', 'Segoe UI', 'Inter', sans-serif;
     animation: cp-menuIn .18s cubic-bezier(.22,1,.36,1);
     transform-origin: top left;
 }
-#ciwei-pet-menu.show { display: block; }
-#ciwei-pet-menu::-webkit-scrollbar { width: 3px; }
-#ciwei-pet-menu::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,.2);
-    border-radius: 4px;
-}
-#ciwei-pet-menu::-webkit-scrollbar-track { background: transparent; }
+#ciwei-pet-menu.show { display: flex; gap: 2px; }
 @keyframes cp-menuIn {
     from { opacity: 0; transform: scale(.9) translateY(-6px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
 }
+
 #ciwei-pet-menu .cp-mi {
+    position: relative;
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    cursor: pointer;
+    transition: all .15s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+#ciwei-pet-menu .cp-mi:hover {
+    background: rgba(255,255,255,.12);
+    transform: translateY(-2px);
+}
+#ciwei-pet-menu .cp-mi:active {
+    transform: translateY(0) scale(.92);
+}
+#ciwei-pet-menu .cp-mi.danger:hover {
+    background: rgba(239,68,68,.18);
+}
+/* 悬浮文字提示 */
+#ciwei-pet-menu .cp-mi::after {
+    content: attr(data-label);
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    font-size: 11px;
+    color: rgba(255,255,255,.9);
+    background: rgba(15, 15, 22, .96);
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all .18s;
+    z-index: 1;
+}
+#ciwei-pet-menu .cp-mi:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ==================== 二级菜单（设置） ==================== */
+#ciwei-pet-submenu {
+    position: fixed;
+    background: rgba(28, 28, 42, .97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    padding: 5px;
+    box-shadow: 0 16px 44px rgba(0,0,0,.5);
+    z-index: 100001;
+    display: none;
+    min-width: 170px;
+    font-family: -apple-system, 'PingFang SC', 'Segoe UI', 'Inter', sans-serif;
+    animation: cp-menuIn .18s cubic-bezier(.22,1,.36,1);
+    transform-origin: top left;
+}
+#ciwei-pet-submenu.show { display: block; }
+#ciwei-pet-submenu .cp-sub-item {
     padding: 8px 12px;
     font-size: 13px;
     color: rgba(255,255,255,.82);
@@ -372,33 +430,162 @@ body[data-fps="low"] #ciwei-pet .cp-toolbar {
     user-select: none;
     white-space: nowrap;
 }
-#ciwei-pet-menu .cp-mi:hover {
+#ciwei-pet-submenu .cp-sub-item:hover {
     background: rgba(255,255,255,.1);
     color: #fff;
 }
-#ciwei-pet-menu .cp-mi:active {
+#ciwei-pet-submenu .cp-sub-item:active {
     background: rgba(255,255,255,.14);
-    transform: scale(.97);
+    transform: scale(.98);
 }
-#ciwei-pet-menu .cp-mi.danger:hover {
+#ciwei-pet-submenu .cp-sub-item.danger:hover {
     background: rgba(239,68,68,.18);
     color: #f87171;
 }
-#ciwei-pet-menu .cp-mi .cp-mi-check {
+#ciwei-pet-submenu .cp-sub-item .cp-sub-check {
     margin-left: auto;
     font-size: 11px;
     color: rgba(255,255,255,.5);
     font-variant-numeric: tabular-nums;
 }
-#ciwei-pet-menu .cp-mi.active .cp-mi-check { color: #58a6ff; }
-#ciwei-pet-menu .cp-mi.highlight .cp-mi-check {
-    color: #fbbf24;
-    font-weight: 600;
-}
-#ciwei-pet-menu .cp-sep {
+#ciwei-pet-submenu .cp-sub-item.active .cp-sub-check { color: #58a6ff; }
+#ciwei-pet-submenu .cp-sep {
     height: 1px;
     background: rgba(255,255,255,.08);
     margin: 4px 8px;
+}
+
+/* ==================== 对话面板 ==================== */
+#ciwei-pet-dialogue {
+    position: fixed;
+    background: rgba(28, 28, 42, .97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 16px 44px rgba(0,0,0,.5);
+    z-index: 100000;
+    display: none;
+    min-width: 220px;
+    max-width: 280px;
+    max-height: 60vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    font-family: -apple-system, 'PingFang SC', 'Segoe UI', 'Inter', sans-serif;
+    animation: cp-menuIn .2s cubic-bezier(.22,1,.36,1);
+    transform-origin: top left;
+}
+#ciwei-pet-dialogue.show { display: block; }
+#ciwei-pet-dialogue::-webkit-scrollbar { width: 3px; }
+#ciwei-pet-dialogue::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.2);
+    border-radius: 4px;
+}
+#ciwei-pet-dialogue .cp-dlg-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px 8px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    margin-bottom: 4px;
+    position: sticky;
+    top: 0;
+    background: rgba(28, 28, 42, .97);
+    border-radius: 14px 14px 0 0;
+    z-index: 1;
+}
+#ciwei-pet-dialogue .cp-dlg-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,.6);
+    letter-spacing: .5px;
+}
+#ciwei-pet-dialogue .cp-dlg-close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.4);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: all .15s;
+    line-height: 1;
+}
+#ciwei-pet-dialogue .cp-dlg-close:hover {
+    background: rgba(255,255,255,.1);
+    color: #fff;
+}
+#ciwei-pet-dialogue .cp-dlg-item {
+    padding: 9px 12px;
+    font-size: 13px;
+    color: rgba(255,255,255,.82);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .14s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.3;
+    position: relative;
+}
+#ciwei-pet-dialogue .cp-dlg-item:hover {
+    background: rgba(255,255,255,.1);
+    color: #fff;
+}
+#ciwei-pet-dialogue .cp-dlg-item:active {
+    background: rgba(255,255,255,.14);
+    transform: scale(.98);
+}
+#ciwei-pet-dialogue .cp-dlg-item .cp-dlg-icon {
+    font-size: 13px;
+    flex-shrink: 0;
+    opacity: .6;
+}
+#ciwei-pet-dialogue .cp-dlg-item.asked {
+    color: rgba(255,255,255,.35);
+}
+#ciwei-pet-dialogue .cp-dlg-item.asked .cp-dlg-icon {
+    color: rgba(88,166,255,.7);
+    opacity: 1;
+}
+#ciwei-pet-dialogue .cp-dlg-item.asked::after {
+    content: '✓';
+    position: absolute;
+    right: 10px;
+    font-size: 11px;
+    color: rgba(88,166,255,.6);
+}
+#ciwei-pet-dialogue .cp-dlg-item.secret {
+    color: #fbbf24;
+}
+#ciwei-pet-dialogue .cp-dlg-item.secret .cp-dlg-icon {
+    color: #fbbf24;
+    opacity: 1;
+}
+#ciwei-pet-dialogue .cp-dlg-item.secret:hover {
+    background: rgba(251,191,36,.14);
+    color: #fbbf24;
+}
+#ciwei-pet-dialogue .cp-dlg-item.replying {
+    background: rgba(88,166,255,.15);
+    color: #fff;
+}
+#ciwei-pet-dialogue .cp-dlg-item.replying::after {
+    content: '…';
+    position: absolute;
+    right: 10px;
+    font-size: 13px;
+    color: #58a6ff;
+    animation: cp-dots 1.2s steps(4) infinite;
+}
+@keyframes cp-dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
 }
 
 /* ==================== 恢复按钮 ==================== */
@@ -429,11 +616,14 @@ body[data-fps="low"] #ciwei-pet .cp-toolbar {
 }
 
 @media (max-width: 600px) {
-    #ciwei-pet .cp-bubble { font-size: 12px; padding: 6px 11px; max-width: 170px; }
+    #ciwei-pet .cp-bubble { font-size: 12px; padding: 6px 11px; max-width: 220px; }
     #ciwei-pet .cp-toolbar-btn { width: 25px; height: 25px; font-size: 12px; }
     #ciwei-pet-restore { width: 40px; height: 40px; font-size: 18px; }
-    #ciwei-pet-menu { min-width: 150px; }
-    #ciwei-pet-menu .cp-mi { padding: 9px 12px; font-size: 13.5px; }
+    #ciwei-pet-menu .cp-mi { width: 34px; height: 34px; font-size: 15px; }
+    #ciwei-pet-submenu { min-width: 150px; }
+    #ciwei-pet-submenu .cp-sub-item { padding: 9px 12px; font-size: 13.5px; }
+    #ciwei-pet-dialogue { min-width: 200px; max-width: 240px; }
+    #ciwei-pet-dialogue .cp-dlg-item { padding: 10px 12px; font-size: 13.5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -450,33 +640,47 @@ body[data-fps="low"] #ciwei-pet .cp-toolbar {
 <!-- 粒子层 -->
 <div id="ciwei-pet-particles"></div>
 
-<!-- 菜单 -->
+<!-- 一级菜单：横排图标条 -->
 <div id="ciwei-pet-menu">
-    <div class="cp-mi" data-menu="love">❤️ <span>摸摸头</span></div>
-    <div class="cp-mi" data-menu="food">🍎 <span>喂食</span></div>
-    <div class="cp-mi" data-menu="sleep">💤 <span>哄睡</span></div>
+    <div class="cp-mi" data-menu="love"     data-label="摸摸头">❤️</div>
+    <div class="cp-mi" data-menu="food"     data-label="喂食">🍎</div>
+    <div class="cp-mi" data-menu="dialogue" data-label="聊天">💬</div>
+    <div class="cp-mi" data-menu="sleep"    data-label="哄睡">💤</div>
+    <div class="cp-mi" data-menu="spin"     data-label="转圈">🔄</div>
+    <div class="cp-mi" data-menu="more"     data-label="更多">⚙️</div>
+</div>
+
+<!-- 二级菜单：更多设置 -->
+<div id="ciwei-pet-submenu">
+    <div class="cp-sub-item" data-menu="roam">🚶 <span>散散步</span></div>
+    <div class="cp-sub-item" data-menu="reset">🏠 <span>回角落</span></div>
     <div class="cp-sep"></div>
-    <div class="cp-mi" data-menu="spin">🔄 <span>转圈圈</span></div>
-    <div class="cp-mi" data-menu="roam">🚶 <span>散散步</span></div>
-    <div class="cp-mi" data-menu="reset">🏠 <span>回角落</span></div>
-    <div class="cp-sep"></div>
-    <div class="cp-mi" data-menu="scale-up">🔍➕ <span>放大</span></div>
-    <div class="cp-mi" data-menu="scale-down">🔍➖ <span>缩小</span></div>
-    <div class="cp-mi highlight" data-menu="scale-reset">
+    <div class="cp-sub-item" data-menu="scale-up">🔍➕ <span>放大</span></div>
+    <div class="cp-sub-item" data-menu="scale-down">🔍➖ <span>缩小</span></div>
+    <div class="cp-sub-item" data-menu="scale-reset">
         📏 <span>重置大小</span>
-        <span class="cp-mi-check" id="cp-scale-check">100%</span>
+        <span class="cp-sub-check" id="cp-scale-check">100%</span>
     </div>
     <div class="cp-sep"></div>
-    <div class="cp-mi active" data-menu="sound">
+    <div class="cp-sub-item active" data-menu="sound">
         🔊 <span>音效</span>
-        <span class="cp-mi-check" id="cp-sound-check">开启</span>
+        <span class="cp-sub-check" id="cp-sound-check">开启</span>
     </div>
-    <div class="cp-mi" data-menu="fps">
+    <div class="cp-sub-item" data-menu="fps">
         📊 <span>帧率</span>
-        <span class="cp-mi-check" id="cp-fps-check">--</span>
+        <span class="cp-sub-check" id="cp-fps-check">--</span>
     </div>
     <div class="cp-sep"></div>
-    <div class="cp-mi danger" data-menu="hide">🙈 <span>隐藏</span></div>
+    <div class="cp-sub-item danger" data-menu="hide">🙈 <span>隐藏</span></div>
+</div>
+
+<!-- 对话面板 -->
+<div id="ciwei-pet-dialogue">
+    <div class="cp-dlg-header">
+        <span class="cp-dlg-title">💬 和小ci聊天</span>
+        <button class="cp-dlg-close" id="cp-dlg-close">✕</button>
+    </div>
+    <div id="cp-dlg-body"></div>
 </div>
 
 <!-- 恢复按钮 -->
@@ -488,13 +692,13 @@ body[data-fps="low"] #ciwei-pet .cp-toolbar {
     <div class="cp-toolbar">
         <button class="cp-toolbar-btn" data-action="love"  title="摸摸头">❤️</button>
         <button class="cp-toolbar-btn" data-action="food"  title="喂食">🍎</button>
+        <button class="cp-toolbar-btn" data-action="dialogue" title="聊天">💬</button>
         <button class="cp-toolbar-btn" data-action="sleep" title="哄睡">💤</button>
-        <button class="cp-toolbar-btn" data-action="spin"  title="转圈">🔄</button>
         <button class="cp-toolbar-btn" data-action="reset" title="归位">🏠</button>
     </div>
     <div class="cp-body">
         <div class="cp-tilt">
-            <img class="cp-img" alt="小刺猬" draggable="false">
+            <img class="cp-img" alt="小ci" draggable="false">
             <div class="cp-light"></div>
         </div>
         <div class="cp-shadow"></div>
@@ -509,8 +713,15 @@ body[data-fps="low"] #ciwei-pet .cp-toolbar {
 if (window.self === window.top) document.body.classList.add('standalone');
 
 // ============================================================
-// 配置
+// 身份档案
 // ============================================================
+var PET_PROFILE = {
+    name: '小ci',
+    developer: 'LouFoong',
+    birthday: '2026-09-10',
+    ipLine: '一只住在 CiweiHome 里的电子刺猬，也是开发者 LouFoong 的 IP 分身。'
+};
+
 var IMAGES = {
     idle1:'idle-1.png', idle2:'idle-2.png',
     blink:'blink.png', surprised:'surprised.png',
@@ -520,6 +731,20 @@ var IMAGES = {
 
 var SCALES = [0.7, 0.85, 1.0, 1.25, 1.5, 2.0];
 var DEFAULT_SCALE_INDEX = 2;
+
+// ============================================================
+// 对话数据
+// ============================================================
+var DIALOGUES = [
+    { id:'who',       icon:'🦔', q:'你是谁？',         a:'我是{name}，{developer} 的电子宠物刺猬。', face:'happy' },
+    { id:'info',      icon:'📇', q:'你的信息',         a:'我叫{name}，生日是 {birthday}。{ipLine}', face:'idle1' },
+    { id:'age',       icon:'🎂', q:'你多大了？',       a:'我出生于 {birthday}，到今天已经 {days} 天啦！', face:'surprised' },
+    { id:'like',      icon:'💖', q:'你喜欢什么？',     a:'喜欢被摸头，喜欢吃苹果。最讨厌被人一直戳！', face:'happy' },
+    { id:'developer', icon:'👨‍💻', q:'LouFoong 是谁？', a:'{developer} 是我的创造者，一个喜欢折腾的独立开发者。', face:'idle1' },
+    { id:'skill',     icon:'✨', q:'你会什么？',       a:'会卖萌、会睡觉、会跟着你的鼠标转头，还会…转圈圈！', face:'happy' },
+    { id:'love',      icon:'❤️', q:'你喜欢我吗？',     a:'当然喜欢！你是我的朋友呀～', face:'happy' },
+    { id:'secret',    icon:'🔒', q:'你的秘密是什么？', a:'你居然找到了这个彩蛋！{developer} 说你是他最好的朋友。', face:'surprised', hidden:true }
+];
 
 var MSG = {
     c1:  ['你戳我干什么？', '干嘛呀～', '有事吗？', '唔？'],
@@ -541,7 +766,9 @@ var MSG = {
     roam: ['散散步～', '走走走～', '换个地方待会儿'],
     longTimeNoSee: ['好久不见…', '你去哪儿了？', '想你了～'],
     scaleMax: ['已经最大啦～', '不能再大咯～'],
-    scaleMin: ['已经最小啦～', '不能再小咯～']
+    scaleMin: ['已经最小啦～', '不能再小咯～'],
+    lateNight: ['这么晚还不睡？', '深夜了…要早点休息哦', '🌙 陪我一起熬夜吗'],
+    birthday: ['🎂 今天是我的生日！', '🎉 今天我过生日～']
 };
 
 var KEYS = {
@@ -551,7 +778,10 @@ var KEYS = {
     clicks:  'ciwei_pet_click_count',
     hidden:  'ciwei_pet_hidden',
     sound:   'ciwei_pet_sound',
-    scale:   'ciwei_pet_scale_index'
+    scale:   'ciwei_pet_scale_index',
+    meeting: 'ciwei_pet_meeting_date',
+    asked:   'ciwei_pet_asked_dialogues',
+    secret:  'ciwei_pet_secret_unlocked'
 };
 
 var SIZE_DESKTOP = 120;
@@ -569,12 +799,36 @@ var isMobile = function () { return window.matchMedia('(max-width: 600px)').matc
 var lsGet = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
 var lsSet = function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} };
 
+function daysSince(timestamp) {
+    if (!timestamp) return 0;
+    var diff = Date.now() - timestamp;
+    return Math.max(1, Math.floor(diff / (24 * 60 * 60 * 1000)) + 1);
+}
+function formatBirthday(str) {
+    var p = str.split('-');
+    if (p.length !== 3) return str;
+    return p[0] + '年' + parseInt(p[1], 10) + '月' + parseInt(p[2], 10) + '日';
+}
+function fillTemplate(text) {
+    var meeting = parseInt(lsGet(KEYS.meeting) || '0', 10);
+    return text
+        .replace(/{name}/g, PET_PROFILE.name)
+        .replace(/{developer}/g, PET_PROFILE.developer)
+        .replace(/{birthday}/g, formatBirthday(PET_PROFILE.birthday))
+        .replace(/{ipLine}/g, PET_PROFILE.ipLine)
+        .replace(/{days}/g, daysSince(meeting));
+}
+
 // ============================================================
 // DOM
 // ============================================================
 var host         = document.getElementById('ciwei-pet');
 var particleLayer= document.getElementById('ciwei-pet-particles');
 var menu         = document.getElementById('ciwei-pet-menu');
+var submenu      = document.getElementById('ciwei-pet-submenu');
+var dialogue     = document.getElementById('ciwei-pet-dialogue');
+var dlgBody      = document.getElementById('cp-dlg-body');
+var dlgClose     = document.getElementById('cp-dlg-close');
 var restoreBtn   = document.getElementById('ciwei-pet-restore');
 var img          = host.querySelector('.cp-img');
 var bodyEl       = host.querySelector('.cp-body');
@@ -606,7 +860,9 @@ var S = {
     avoidTimer:null, avoidCooldown:0, longPressTimer:null,
     mouseX: window.innerWidth/2,
     mouseY: window.innerHeight/2,
-    mouseActive:false
+    mouseActive:false,
+    dialogueOpen: false,
+    replyTimer: null
 };
 var lastLongPressTime = 0;
 
@@ -652,7 +908,6 @@ function getScalePercent() { return Math.round(SCALES[S.scaleIndex] * 100); }
 function applySize() {
     document.documentElement.style.setProperty('--cp-size', getSize() + 'px');
 }
-
 function applyScale() {
     host.classList.add('scaling');
     applySize();
@@ -767,17 +1022,23 @@ var SFX = {
     sleep:  function () { tone({ freq: 392, dur: .4,  gain: .05, slideTo: 262 }); },
     wake:   function () { tone({ freq: 440, dur: .25, gain: .05, slideTo: 880 }); },
     spin:   function () { tone({ freq: 1200, dur: .35, type: 'sawtooth', gain: .035, slideTo: 400 }); },
-    bounce: function () { tone({ freq: 200, dur: .09, type: 'square', gain: .04, slideTo: 120 }); }
+    bounce: function () { tone({ freq: 200, dur: .09, type: 'square', gain: .04, slideTo: 120 }); },
+    talk:   function () { tone({ freq: 700, dur: .08, type: 'triangle', gain: .04, slideTo: 900 }); }
 };
 
 // ============================================================
-// 气泡
+// 气泡（关键：短文本不换行，长文本才换行）
 // ============================================================
 function showBubble(text, duration, typewriter) {
     duration = duration || 2600;
     typewriter = typewriter !== false;
     clearTimeout(S.bubbleTimer);
     clearInterval(S.typeTimer);
+
+    // 判断是否需要换行（超过 14 个字符认为需要换行）
+    var needWrap = text.length > 14;
+    bubble.classList.toggle('long', needWrap);
+
     bubble.classList.add('show');
     if (!typewriter) { bubble.textContent = text; }
     else {
@@ -864,6 +1125,7 @@ function scheduleIdleAction() {
     clearTimeout(S.idleActionTimer);
     S.idleActionTimer = setTimeout(function () {
         if (S.sleeping || S.hidden || S.dragging || S.sliding ||
+            S.dialogueOpen ||
             Date.now() - S.last < 15000) {
             scheduleIdleAction();
             return;
@@ -950,11 +1212,18 @@ function handleClick() {
     else if (n >= 8)  { msg = pick(MSG.c8); face = 'angry'; }
     else              { msg = pick(MSG.idle); face = 'happy'; }
     if (n > 15) msg = '你戳了 ' + n + ' 次了，累不累？';
-    if (n === 25) {
+
+    if (n === 25 && lsGet(KEYS.secret) !== 'true') {
         msg = '🎉 你解锁了隐藏彩蛋！';
         burst('🎊', 12);
         S.mood = 100;
         updateMoodColor();
+        lsSet(KEYS.secret, 'true');
+        setTimeout(function () {
+            showBubble('💬 菜单里多了一个秘密选项…', 3200, false);
+        }, 2400);
+    } else if (n === 25) {
+        msg = '又戳 25 次了，你不累吗？';
     }
 
     setFace(face, 2400);
@@ -990,7 +1259,10 @@ function stopStruggle() {
 }
 
 function onDown(e, isTouch) {
-    if (e.target.closest('.cp-toolbar') || e.target.closest('#ciwei-pet-menu')) return;
+    if (e.target.closest('.cp-toolbar') ||
+        e.target.closest('#ciwei-pet-menu') ||
+        e.target.closest('#ciwei-pet-submenu') ||
+        e.target.closest('#ciwei-pet-dialogue')) return;
     if (e.button && e.button !== 0) return;
 
     initAudio();
@@ -1101,6 +1373,8 @@ host.addEventListener('click', function (e) {
 document.addEventListener('dblclick', function (e) {
     if (e.target.closest('#ciwei-pet') ||
         e.target.closest('#ciwei-pet-menu') ||
+        e.target.closest('#ciwei-pet-submenu') ||
+        e.target.closest('#ciwei-pet-dialogue') ||
         e.target.closest('#ciwei-pet-restore') ||
         e.target.closest('[class*="modal"]')) return;
     if (S.sleeping) return;
@@ -1195,7 +1469,7 @@ host.addEventListener('mouseleave', function () {
 // 智能避让
 // ============================================================
 document.addEventListener('mousemove', function (e) {
-    if (isMobile() || S.dragging || S.sleeping || S.hidden) return;
+    if (isMobile() || S.dragging || S.sleeping || S.hidden || S.dialogueOpen) return;
     if (performance.now() < S.avoidCooldown) return;
     var s = getSize();
     var cx = S.x + s / 2;
@@ -1203,7 +1477,7 @@ document.addEventListener('mousemove', function (e) {
     var dist = Math.hypot(e.clientX - cx, e.clientY - cy);
     if (dist < 85 && !S.avoidTimer) {
         S.avoidTimer = setTimeout(function () {
-            if (S.dragging || S.sleeping) { S.avoidTimer = null; return; }
+            if (S.dragging || S.sleeping || S.dialogueOpen) { S.avoidTimer = null; return; }
             var dx = cx - e.clientX;
             var dy = cy - e.clientY;
             var len = Math.hypot(dx, dy) || 1;
@@ -1260,7 +1534,7 @@ function doSpin() {
     setTimeout(function () { host.classList.remove('spin'); }, 880);
 }
 function roam(maxX, maxY) {
-    if (S.sleeping || S.dragging || S.sliding) return;
+    if (S.sleeping || S.dragging || S.sliding || S.dialogueOpen) return;
     var dirX = Math.random() < .5 ? -1 : 1;
     var dirY = Math.random() < .5 ? -1 : 1;
     var dx = dirX * rand(maxX * .4, maxX);
@@ -1323,6 +1597,134 @@ function doShow() {
 }
 
 // ============================================================
+// 对话系统（关键修复：面板保留，气泡显示答案）
+// ============================================================
+function getAskedList() {
+    var raw = lsGet(KEYS.asked);
+    if (!raw) return [];
+    try { return JSON.parse(raw) || []; } catch (e) { return []; }
+}
+function markAsked(id) {
+    var list = getAskedList();
+    if (list.indexOf(id) === -1) {
+        list.push(id);
+        lsSet(KEYS.asked, JSON.stringify(list));
+    }
+}
+function isSecretUnlocked() {
+    return lsGet(KEYS.secret) === 'true';
+}
+
+function buildDialogueMenu() {
+    var asked = getAskedList();
+    var secretOK = isSecretUnlocked();
+    var html = '';
+    for (var i = 0; i < DIALOGUES.length; i++) {
+        var d = DIALOGUES[i];
+        if (d.hidden && !secretOK) continue;
+        var cls = 'cp-dlg-item';
+        if (asked.indexOf(d.id) !== -1) cls += ' asked';
+        if (d.hidden) cls += ' secret';
+        html += '<div class="' + cls + '" data-dlg-id="' + d.id + '">' +
+                '<span class="cp-dlg-icon">' + d.icon + '</span>' +
+                '<span>' + d.q + '</span>' +
+                '</div>';
+    }
+    dlgBody.innerHTML = html;
+}
+
+function showDialogueAt() {
+    S.dialogueOpen = true;
+    buildDialogueMenu();
+
+    var s = getSize();
+    var px = S.x + s + 8;
+    var py = S.y;
+
+    dialogue.style.left = px + 'px';
+    dialogue.style.top  = py + 'px';
+    dialogue.classList.add('show');
+
+    var dr = dialogue.getBoundingClientRect();
+
+    if (px + dr.width > window.innerWidth - 8) {
+        var leftX = S.x - dr.width - 8;
+        if (leftX < 8) leftX = Math.max(8, window.innerWidth - dr.width - 8);
+        dialogue.style.left = leftX + 'px';
+    }
+    if (py + dr.height > window.innerHeight - 8) {
+        dialogue.style.top = Math.max(8, window.innerHeight - dr.height - 8) + 'px';
+    }
+    if (parseFloat(dialogue.style.top) < 8) dialogue.style.top = '8px';
+
+    clearTimeout(S.avoidTimer);
+    S.avoidTimer = null;
+    S.avoidCooldown = performance.now() + 60000;
+}
+
+function hideDialogue() {
+    dialogue.classList.remove('show');
+    S.dialogueOpen = false;
+    // 恢复避让
+    S.avoidCooldown = performance.now() + 2000;
+}
+
+// 点击对话项（关键：不关闭面板，气泡显示答案）
+dlgBody.addEventListener('click', function (e) {
+    var item = e.target.closest('[data-dlg-id]');
+    if (!item) return;
+    e.stopPropagation();
+    var id = item.getAttribute('data-dlg-id');
+    var d = null;
+    for (var i = 0; i < DIALOGUES.length; i++) {
+        if (DIALOGUES[i].id === id) { d = DIALOGUES[i]; break; }
+    }
+    if (!d) return;
+
+    initAudio();
+    SFX.talk();
+
+    // ⭐ 关键：不关闭面板，标记这条为"正在回复"
+    var prevReplying = dlgBody.querySelector('.replying');
+    if (prevReplying) prevReplying.classList.remove('replying');
+    item.classList.add('replying');
+
+    // 刺猬回复
+    var text = fillTemplate(d.a);
+    if (!S.sleeping) {
+        setFace(d.face || 'happy', 3000);
+    }
+    showBubble(text, 4000, true);
+
+    // 心情加成
+    S.mood = clamp(S.mood + 4, 0, 100);
+    updateMoodColor();
+    saveLast();
+
+    // 标记已问
+    markAsked(id);
+
+    // 粒子反馈
+    if (d.hidden) {
+        burst('🎉', 8);
+    } else {
+        burst('💬', 2);
+    }
+
+    // 回复完成后：取消正在回复标记，刷新菜单（变灰）
+    clearTimeout(S.replyTimer);
+    S.replyTimer = setTimeout(function () {
+        item.classList.remove('replying');
+        buildDialogueMenu();
+    }, 4200);
+});
+
+dlgClose.addEventListener('click', function (e) {
+    e.stopPropagation();
+    hideDialogue();
+});
+
+// ============================================================
 // 工具栏
 // ============================================================
 toolbar.addEventListener('click', function (e) {
@@ -1333,7 +1735,7 @@ toolbar.addEventListener('click', function (e) {
     if (act === 'love')       doPet();
     else if (act === 'food')  doFood();
     else if (act === 'sleep') doSleepToggle();
-    else if (act === 'spin')  doSpin();
+    else if (act === 'dialogue') showDialogueAt();
     else if (act === 'reset') doReset();
 });
 toolbar.addEventListener('mouseenter', function () { host.classList.add('show-toolbar'); });
@@ -1341,24 +1743,49 @@ toolbar.addEventListener('mouseleave', function () { host.classList.remove('show
 restoreBtn.addEventListener('click', doShow);
 
 // ============================================================
-// 菜单
+// 菜单（一级横排 + 二级折叠）
 // ============================================================
 function showMenuAt(x, y) {
     menu.style.left = x + 'px';
     menu.style.top  = y + 'px';
     menu.classList.add('show');
+    submenu.classList.remove('show');
+
+    var mr = menu.getBoundingClientRect();
+    // 右侧溢出 → 左移
+    if (x + mr.width > window.innerWidth - 8) {
+        menu.style.left = Math.max(8, window.innerWidth - mr.width - 8) + 'px';
+    }
+    // 底部溢出 → 上移
+    if (y + mr.height > window.innerHeight - 8) {
+        menu.style.top = Math.max(8, y - mr.height - 8) + 'px';
+    }
+    if (parseFloat(menu.style.top) < 8) menu.style.top = '8px';
+}
+
+function showSubmenu() {
+    var mr = menu.getBoundingClientRect();
+    // 二级菜单紧贴一级菜单下方
+    var sx = mr.left;
+    var sy = mr.bottom + 4;
+    submenu.style.left = sx + 'px';
+    submenu.style.top  = sy + 'px';
+    submenu.classList.add('show');
+
+    // 更新显示
     soundChk.textContent = S.soundOn ? '开启' : '关闭';
     fpsChk.textContent = measuredFPS + 'fps';
     updateScaleDisplay();
 
-    var mr = menu.getBoundingClientRect();
-    if (x + mr.width > window.innerWidth) {
-        menu.style.left = Math.max(8, window.innerWidth - mr.width - 8) + 'px';
+    // 边界调整
+    var sr = submenu.getBoundingClientRect();
+    if (sx + sr.width > window.innerWidth - 8) {
+        submenu.style.left = Math.max(8, window.innerWidth - sr.width - 8) + 'px';
     }
-    if (y + mr.height > window.innerHeight) {
-        menu.style.top = Math.max(8, y - mr.height - 8) + 'px';
+    if (sy + sr.height > window.innerHeight - 8) {
+        // 放到一级菜单上方
+        submenu.style.top = Math.max(8, mr.top - sr.height - 4) + 'px';
     }
-    if (parseFloat(menu.style.top) < 8) menu.style.top = '8px';
 }
 
 host.addEventListener('contextmenu', function (e) {
@@ -1373,13 +1800,37 @@ menu.addEventListener('click', function (e) {
     e.stopPropagation();
     var act = item.dataset.menu;
 
-    if (act === 'love')        { doPet(); menu.classList.remove('show'); }
-    else if (act === 'food')   { doFood(); menu.classList.remove('show'); }
-    else if (act === 'sleep')  { doSleepToggle(); menu.classList.remove('show'); }
-    else if (act === 'spin')   { doSpin(); menu.classList.remove('show'); }
-    else if (act === 'roam')   { doRoam(); menu.classList.remove('show'); }
-    else if (act === 'reset')  { doReset(); menu.classList.remove('show'); }
-    else if (act === 'hide')   { doHide(); menu.classList.remove('show'); }
+    if (act === 'more') {
+        // 切换二级菜单
+        if (submenu.classList.contains('show')) {
+            submenu.classList.remove('show');
+        } else {
+            showSubmenu();
+        }
+        return;
+    }
+
+    // 一级菜单动作 → 立即执行并关闭
+    if (act === 'love')       { doPet(); menu.classList.remove('show'); }
+    else if (act === 'food')  { doFood(); menu.classList.remove('show'); }
+    else if (act === 'dialogue') {
+        menu.classList.remove('show');
+        submenu.classList.remove('show');
+        setTimeout(function () { showDialogueAt(); }, 60);
+    }
+    else if (act === 'sleep') { doSleepToggle(); menu.classList.remove('show'); }
+    else if (act === 'spin')  { doSpin(); menu.classList.remove('show'); }
+});
+
+submenu.addEventListener('click', function (e) {
+    var item = e.target.closest('[data-menu]');
+    if (!item) return;
+    e.stopPropagation();
+    var act = item.dataset.menu;
+
+    if (act === 'roam')        { doRoam(); submenu.classList.remove('show'); menu.classList.remove('show'); }
+    else if (act === 'reset')  { doReset(); submenu.classList.remove('show'); menu.classList.remove('show'); }
+    else if (act === 'hide')   { doHide(); submenu.classList.remove('show'); menu.classList.remove('show'); }
     else if (act === 'scale-up')    { doScaleUp(); }
     else if (act === 'scale-down')  { doScaleDown(); }
     else if (act === 'scale-reset') { doScaleReset(); }
@@ -1389,14 +1840,62 @@ menu.addEventListener('click', function (e) {
         item.classList.toggle('active', S.soundOn);
         if (S.soundOn) { initAudio(); SFX.pet(); }
     }
+    // fps 纯展示
 });
 
 document.addEventListener('click', function (e) {
     if (performance.now() - lastLongPressTime < 600) return;
-    if (!e.target.closest('#ciwei-pet-menu') && !e.target.closest('#ciwei-pet')) {
+    var inMenu = e.target.closest('#ciwei-pet-menu');
+    var inSub  = e.target.closest('#ciwei-pet-submenu');
+    var inDlg  = e.target.closest('#ciwei-pet-dialogue');
+    var inPet  = e.target.closest('#ciwei-pet');
+
+    if (!inMenu && !inSub && !inPet) {
         menu.classList.remove('show');
+        submenu.classList.remove('show');
     }
+    // 对话面板不自动关闭
 });
+
+// ============================================================
+// 彩蛋
+// ============================================================
+function checkBirthday() {
+    var today = new Date();
+    var md = ('0' + (today.getMonth() + 1)).slice(-2) + '-' +
+             ('0' + today.getDate()).slice(-2);
+    var birthMD = PET_PROFILE.birthday.slice(5);
+    if (md === birthMD) {
+        setTimeout(function () {
+            if (S.sleeping || S.hidden) return;
+            showBubble(pick(MSG.birthday), 4000, false);
+            burst('🎂', 10);
+            burst('🎉', 6);
+            SFX.wake();
+        }, 3000);
+    }
+}
+function checkLateNight() {
+    var h = new Date().getHours();
+    if (h >= 2 && h < 5) {
+        setTimeout(function () {
+            if (S.sleeping || S.hidden) return;
+            showBubble(pick(MSG.lateNight), 3600, false);
+        }, 5000);
+    }
+}
+function checkLongTimeNoSee() {
+    setTimeout(function () {
+        if (S.sleeping || S.hidden) return;
+        var idleFor = Date.now() - S.last;
+        if (idleFor > 24 * 60 * 60 * 1000) {
+            showBubble(pick(MSG.longTimeNoSee), 3200, false);
+        } else {
+            showBubble('你好呀～我是小ci 🦔', 2600, false);
+        }
+        burst('✨', 4);
+    }, 1200);
+}
 
 // ============================================================
 // 后台省电
@@ -1414,6 +1913,9 @@ document.addEventListener('visibilitychange', function () {
 // 恢复状态
 // ============================================================
 function restore() {
+    if (!lsGet(KEYS.meeting)) {
+        lsSet(KEYS.meeting, String(Date.now()));
+    }
     var savedScale = parseInt(lsGet(KEYS.scale) || String(DEFAULT_SCALE_INDEX), 10);
     if (isNaN(savedScale) || savedScale < 0 || savedScale >= SCALES.length) {
         savedScale = DEFAULT_SCALE_INDEX;
@@ -1471,16 +1973,9 @@ requestAnimationFrame(function () { host.classList.add('ready'); });
 requestAnimationFrame(mainLoop);
 scheduleIdleAction();
 
-setTimeout(function () {
-    if (S.sleeping || S.hidden) return;
-    var idleFor = Date.now() - S.last;
-    if (idleFor > 24 * 60 * 60 * 1000) {
-        showBubble(pick(MSG.longTimeNoSee), 3200, false);
-    } else {
-        showBubble('你好呀～我是小刺猬 🦔', 2600, false);
-    }
-    burst('✨', 4);
-}, 1200);
+checkLongTimeNoSee();
+checkBirthday();
+checkLateNight();
 
 var rt = null;
 window.addEventListener('resize', function () {
@@ -1490,6 +1985,10 @@ window.addEventListener('resize', function () {
         var c = clampPos(S.x, S.y);
         setPos(c.x, c.y, false);
         savePos();
+        if (S.dialogueOpen) {
+            hideDialogue();
+            showDialogueAt();
+        }
     }, 150);
 });
 
@@ -1498,11 +1997,9 @@ window.addEventListener('beforeunload', function () {
     lsSet(KEYS.last, String(S.last));
 });
 
-console.log('%c🦔 CiweiPet 独立版 v2 已启动', 'font-size:16px;color:#58a6ff;font-weight:bold');
+console.log('%c🦔 小ci · 电子宠物 已启动', 'font-size:16px;color:#58a6ff;font-weight:bold');
 console.log('⚡ ' + measuredFPS + 'fps · ' + getScalePercent() + '%');
-console.log('✨ 全部功能：缩放 · 长按菜单 · 音效 · 帧率自适应 · 视线跟随 · 环境光');
-console.log('       拖拽挣扎 · 惯性滑动 · 撞墙反弹 · 智能避让 · 自主漫游 · 双击走位');
-console.log('       边缘吸附 · 心情系统 · 打字机气泡 · 彩蛋 · 后台省电 · PWA');
+console.log('💬 对话保留 · 🎂 生日彩蛋 · 🌙 深夜彩蛋 · ✨ 25击彩蛋 · 📐 横排菜单');
 
 })();
 </script>
