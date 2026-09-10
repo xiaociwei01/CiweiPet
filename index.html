@@ -1,1251 +1,1635 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🦔 小刺猬宠物</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🦔 小刺猬宠物</title>
+<style>
+/* =====================================================================
+   全局重置
+===================================================================== */
+*{margin:0;padding:0;box-sizing:border-box}
 
-        html, body {
-            width: 100%; height: 100%;
-            overflow: hidden;
-            background: transparent;
-            font-family: -apple-system, 'PingFang SC', 'Segoe UI', 'Inter', sans-serif;
-            user-select: none; -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body.standalone {
-            background: radial-gradient(circle at 30% 20%, #1a1a2e 0%, #0a0a0f 70%);
-        }
+html,body{
+    width:100%;height:100%;
+    overflow:hidden;
+    background:transparent;
+    font-family:-apple-system,'PingFang SC','Segoe UI','Inter',sans-serif;
+    user-select:none;-webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+}
+body.standalone{
+    background:radial-gradient(circle at 30% 20%,#1a1a2e 0%,#0a0a0f 70%);
+}
 
-        /* ============================================================
-           宠物容器 — 尺寸 = 图片尺寸，不再包含工具栏/气泡
-           ============================================================ */
-        .pet-wrapper {
-            position: fixed;
-            left: 0; top: 0;
-            width: 120px; height: 120px;
-            z-index: 99999;
-            /* 初始藏在屏幕外，恢复位置后再出现 */
-            transform: translate3d(-9999px, -9999px, 0);
-            will-change: transform;
-            cursor: grab;
-            touch-action: none;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-        .pet-wrapper.ready { opacity: 1; }
-        .pet-wrapper.dragging { cursor: grabbing; }
-        .pet-wrapper.animating {
-            transition:
-                transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
-                opacity 0.4s ease;
-        }
+/* =====================================================================
+   帧率自适应变量（JS 会动态写入 --fps）
+===================================================================== */
+:root{
+    --fps:60;
+    --pet-size:120px;
+    --breath-dur:2.8s;
+    --glow-dur:3.2s;
+    --tilt-dur:.5s;
+    --bubble-dur:.26s;
+    --toolbar-dur:.24s;
+    --particle-dur:1.15s;
+    --zzz-dur:2.6s;
+    --accent:88,166,255;
+}
+@media (max-width:600px){:root{--pet-size:88px}}
 
-        /* ============================================================
-           气泡 — 绝对定位，脱离文档流，不影响容器尺寸
-           ============================================================ */
-        .pet-bubble {
-            position: absolute;
-            left: 50%;
-            bottom: calc(100% + 10px);
-            transform: translateX(-50%) translateY(6px) scale(0.9);
-            background: rgba(30, 30, 45, 0.94);
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 14px 14px 4px 14px;
-            font-size: 13px;
-            font-weight: 500;
-            line-height: 1.4;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.28);
-            max-width: 200px;
-            min-height: 30px;
-            opacity: 0;
-            transition: all 0.26s cubic-bezier(0.22, 1, 0.36, 1);
-            pointer-events: none;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            white-space: nowrap;
-            z-index: 10;
-        }
-        .pet-bubble.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0) scale(1);
-        }
-        .pet-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -5px; right: 18px;
-            width: 10px; height: 10px;
-            background: rgba(30, 30, 45, 0.94);
-            transform: rotate(45deg);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            border-radius: 0 0 2px 0;
-        }
-        /* 刺猬贴顶时，气泡翻到下方 */
-        .pet-wrapper.bubble-below .pet-bubble {
-            bottom: auto;
-            top: calc(100% + 10px);
-            border-radius: 4px 14px 14px 14px;
-            transform: translateX(-50%) translateY(-6px) scale(0.9);
-        }
-        .pet-wrapper.bubble-below .pet-bubble.show {
-            transform: translateX(-50%) translateY(0) scale(1);
-        }
-        .pet-wrapper.bubble-below .pet-bubble::after {
-            bottom: auto; top: -5px; right: 18px;
-            border: none;
-            border-left: 1px solid rgba(255,255,255,0.1);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            border-radius: 2px 0 0 0;
-        }
+/* 高刷屏：动画可以更细腻 */
+body[data-fps="high"]{
+    --breath-dur:2.5s;
+    --glow-dur:3s;
+    --tilt-dur:.42s;
+}
+/* 低刷屏：动画放慢一点，减少跳帧感 */
+body[data-fps="low"]{
+    --breath-dur:3.4s;
+    --glow-dur:3.8s;
+    --tilt-dur:.6s;
+    --particle-dur:1.35s;
+}
 
-        /* ============================================================
-           工具栏 — 绝对定位，脱离文档流
-           ============================================================ */
-        .pet-toolbar {
-            position: absolute;
-            left: 50%;
-            top: calc(100% + 6px);
-            transform: translateX(-50%) translateY(-6px);
-            display: flex;
-            gap: 2px;
-            background: rgba(30, 30, 45, 0.88);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            padding: 3px;
-            border-radius: 18px;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-            opacity: 0;
-            transition: all 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-            pointer-events: none;
-            z-index: 5;
-        }
-        .pet-wrapper.show-toolbar .pet-toolbar,
-        .pet-wrapper:hover .pet-toolbar {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-            pointer-events: auto;
-        }
-        /* 刺猬贴底时，工具栏翻到上方 */
-        .pet-wrapper.toolbar-above .pet-toolbar {
-            top: auto;
-            bottom: calc(100% + 6px);
-            transform: translateX(-50%) translateY(6px);
-        }
-        .pet-wrapper.toolbar-above.show-toolbar .pet-toolbar,
-        .pet-wrapper.toolbar-above:hover .pet-toolbar {
-            transform: translateX(-50%) translateY(0);
-        }
+/* =====================================================================
+   宠物容器 — 尺寸 = 图片尺寸，不含溢出元素
+===================================================================== */
+.pet-wrapper{
+    position:fixed;
+    left:0;top:0;
+    width:var(--pet-size);
+    height:var(--pet-size);
+    z-index:99999;
+    transform:translate3d(-9999px,-9999px,0);
+    will-change:transform;
+    cursor:grab;
+    touch-action:none;
+    opacity:0;
+    transition:opacity .45s cubic-bezier(.22,1,.36,1);
+}
+.pet-wrapper.ready{opacity:1}
+.pet-wrapper.dragging{cursor:grabbing}
+.pet-wrapper.animating{
+    transition:
+        transform .55s cubic-bezier(.34,1.56,.64,1),
+        opacity .45s cubic-bezier(.22,1,.36,1);
+}
+.pet-wrapper.hidden{display:none}
 
-        .toolbar-btn {
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            border: none;
-            background: transparent;
-            color: rgba(255,255,255,0.75);
-            cursor: pointer;
-            font-size: 13px;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.18s;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .toolbar-btn:hover {
-            background: rgba(255,255,255,0.16);
-            color: #fff;
-            transform: scale(1.18);
-        }
-        .toolbar-btn:active { transform: scale(0.85); }
+/* =====================================================================
+   宠物身体 + 光晕 + 阴影
+===================================================================== */
+.pet-body{
+    position:relative;
+    width:100%;height:100%;
+    transition:transform .15s ease-out;
+    transform-style:preserve-3d;
+}
 
-        /* ============================================================
-           宠物身体
-           ============================================================ */
-        .pet-body {
-            position: relative;
-            width: 100%; height: 100%;
-            transition: transform 0.15s ease-out;
-        }
+/* 呼吸浮动 */
+.pet-wrapper.idle-float .pet-body{
+    animation:idleFloat var(--breath-dur) ease-in-out infinite;
+}
+@keyframes idleFloat{
+    0%,100%{transform:translateY(0) rotate(0)}
+    25%{transform:translateY(-3px) rotate(-.8deg)}
+    75%{transform:translateY(-3px) rotate(.8deg)}
+}
 
-        /* 呼吸浮动 */
-        .pet-wrapper.idle-float .pet-body {
-            animation: idleFloat 2.8s ease-in-out infinite;
-        }
-        @keyframes idleFloat {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            25%      { transform: translateY(-3px) rotate(-0.8deg); }
-            75%      { transform: translateY(-3px) rotate(0.8deg); }
-        }
+/* 光晕（颜色跟随心情） */
+.pet-body::before{
+    content:'';
+    position:absolute;
+    inset:-14px;
+    border-radius:50%;
+    background:radial-gradient(circle,
+        rgba(var(--accent),.24) 0%,
+        transparent 70%);
+    animation:pulseGlow var(--glow-dur) ease-in-out infinite;
+    pointer-events:none;
+    z-index:0;
+    transition:background .8s ease;
+}
+@keyframes pulseGlow{
+    0%,100%{transform:scale(1);opacity:.55}
+    50%{transform:scale(1.1);opacity:.2}
+}
+/* 低帧率禁用光晕动画 */
+body[data-fps="low"] .pet-body::before{animation:none;opacity:.35}
 
-        /* 光晕（跟随呼吸） */
-        .pet-body::before {
-            content: '';
-            position: absolute;
-            inset: -14px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(88,166,255,0.22) 0%, transparent 70%);
-            animation: pulseGlow 3.2s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-        @keyframes pulseGlow {
-            0%, 100% { transform: scale(1);   opacity: 0.55; }
-            50%      { transform: scale(1.1); opacity: 0.22; }
-        }
-        /* 睡觉时光晕偏冷色 */
-        .pet-wrapper.sleeping .pet-body::before {
-            background: radial-gradient(circle, rgba(120,160,255,0.28) 0%, transparent 70%);
-        }
+/* 睡觉时光晕偏冷色 */
+.pet-wrapper.sleeping .pet-body::before{
+    background:radial-gradient(circle,rgba(120,160,255,.3) 0%,transparent 70%);
+}
 
-        /* 3D 倾斜层 */
-        .pet-tilt {
-            position: relative;
-            width: 100%; height: 100%;
-            transform-style: preserve-3d;
-            transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-            z-index: 1;
-        }
+/* 软阴影（拖拽时变淡） */
+.pet-shadow{
+    position:absolute;
+    bottom:-6px;left:50%;
+    transform:translateX(-50%);
+    width:66%;height:9px;
+    background:radial-gradient(ellipse,rgba(0,0,0,.32) 0%,transparent 72%);
+    border-radius:50%;
+    pointer-events:none;
+    z-index:-1;
+    transition:all .28s cubic-bezier(.22,1,.36,1);
+}
+.pet-wrapper.dragging .pet-shadow{
+    opacity:.12;
+    transform:translateX(-50%) scale(1.4);
+    bottom:-14px;
+}
+.pet-wrapper.sleeping .pet-shadow{
+    width:76%;opacity:.5;
+}
 
-        .hedgehog-img {
-            width: 100%; height: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0 5px 14px rgba(0,0,0,0.22));
-            pointer-events: none;
-            transition: filter 0.2s ease-out;
-        }
-        /* 睡觉时图片变柔和 */
-        .pet-wrapper.sleeping .hedgehog-img {
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15)) saturate(0.85) brightness(0.96);
-        }
+/* 3D 倾斜层 */
+.pet-tilt{
+    position:relative;
+    width:100%;height:100%;
+    transform-style:preserve-3d;
+    transition:transform var(--tilt-dur) cubic-bezier(.22,1,.36,1);
+    z-index:1;
+}
 
-        /* 挤压动画 */
-        .pet-wrapper.squash .hedgehog-img {
-            animation: squashAnim 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @keyframes squashAnim {
-            0%   { transform: scale(1, 1); }
-            30%  { transform: scale(1.2, 0.8); }
-            60%  { transform: scale(0.9, 1.13); }
-            100% { transform: scale(1, 1); }
-        }
+/* 鼠标环境光（跟随光标方向） */
+.pet-light{
+    position:absolute;
+    inset:-18px;
+    border-radius:50%;
+    pointer-events:none;
+    z-index:2;
+    background:radial-gradient(
+        circle at var(--light-x,50%) var(--light-y,50%),
+        rgba(255,255,255,.36) 0%,
+        transparent 55%
+    );
+    mix-blend-mode:overlay;
+    opacity:.7;
+    transition:opacity .3s;
+}
+.pet-wrapper.sleeping .pet-light{opacity:.25}
 
-        /* 旋转动画 */
-        .pet-wrapper.spin .pet-body {
-            animation: spinAnim 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-        }
-        @keyframes spinAnim {
-            0%   { transform: rotate(0deg) scale(1); }
-            50%  { transform: rotate(180deg) scale(1.1); }
-            100% { transform: rotate(360deg) scale(1); }
-        }
+/* 图片 */
+.hedgehog-img{
+    width:100%;height:100%;
+    object-fit:contain;
+    filter:drop-shadow(0 5px 14px rgba(0,0,0,.22));
+    pointer-events:none;
+    transition:filter .22s ease-out;
+}
+.pet-wrapper.sleeping .hedgehog-img{
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.14))
+           saturate(.85) brightness(.96);
+}
 
-        /* 睡觉摇摆 */
-        .pet-wrapper.sleeping .pet-body {
-            animation: sleepBreath 4.5s ease-in-out infinite;
-        }
-        @keyframes sleepBreath {
-            0%, 100% { transform: scale(1) rotate(-1.2deg); }
-            50%      { transform: scale(1.03) translateY(-2px) rotate(1.5deg); }
-        }
+/* 挤压 */
+.pet-wrapper.squash .hedgehog-img{
+    animation:squashAnim .42s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes squashAnim{
+    0%{transform:scale(1,1)}
+    30%{transform:scale(1.2,.8)}
+    60%{transform:scale(.9,1.13)}
+    100%{transform:scale(1,1)}
+}
 
-        /* ============================================================
-           💤 飘出
-           ============================================================ */
-        .sleep-zzz {
-            position: absolute;
-            top: -6px; right: -14px;
-            font-size: 17px;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 2;
-        }
-        .pet-wrapper.sleeping .sleep-zzz {
-            animation: zzzFloat 2.6s ease-out infinite;
-        }
-        @keyframes zzzFloat {
-            0%   { opacity: 0; transform: translate(0, 0) scale(0.5); }
-            22%  { opacity: 1; transform: translate(-4px, -10px) scale(0.9); }
-            65%  { opacity: 0.7; transform: translate(-16px, -32px) scale(1.1); }
-            100% { opacity: 0; transform: translate(-26px, -54px) scale(1.25); }
-        }
+/* 旋转 */
+.pet-wrapper.spin .pet-body{
+    animation:spinAnim .85s cubic-bezier(.34,1.56,.64,1) !important;
+}
+@keyframes spinAnim{
+    0%{transform:rotate(0) scale(1)}
+    50%{transform:rotate(180deg) scale(1.1)}
+    100%{transform:rotate(360deg) scale(1)}
+}
 
-        /* ============================================================
-           粒子层
-           ============================================================ */
-        .pet-particles {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 99998;
-            overflow: hidden;
-        }
-        .particle {
-            position: absolute;
-            pointer-events: none;
-            will-change: transform, opacity;
-            animation: particleFly 1.15s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-        }
-        @keyframes particleFly {
-            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
-            20%  { opacity: 1; }
-            100% { opacity: 0; transform:
-                    translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)))
-                    scale(1.15) rotate(var(--rot)); }
-        }
+/* 睡觉摇摆 */
+.pet-wrapper.sleeping .pet-body{
+    animation:sleepBreath 4.5s ease-in-out infinite;
+}
+@keyframes sleepBreath{
+    0%,100%{transform:scale(1) rotate(-1.2deg)}
+    50%{transform:scale(1.03) translateY(-2px) rotate(1.5deg)}
+}
 
-        /* ============================================================
-           右键菜单
-           ============================================================ */
-        .pet-menu {
-            position: fixed;
-            background: rgba(28, 28, 42, 0.96);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 5px;
-            box-shadow: 0 12px 36px rgba(0,0,0,0.4);
-            z-index: 100000;
-            display: none;
-            min-width: 140px;
-            animation: menuIn 0.18s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .pet-menu.show { display: block; }
-        @keyframes menuIn {
-            from { opacity: 0; transform: scale(0.9) translateY(-6px); }
-            to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .pet-menu-item {
-            padding: 7px 12px;
-            font-size: 13px;
-            color: rgba(255,255,255,0.82);
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex; align-items: center; gap: 8px;
-            transition: all 0.14s;
-            user-select: none;
-        }
-        .pet-menu-item:hover {
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-        }
-        .pet-menu-item.danger:hover {
-            background: rgba(239,68,68,0.18);
-            color: #f87171;
-        }
-        .pet-menu-sep {
-            height: 1px;
-            background: rgba(255,255,255,0.08);
-            margin: 4px 8px;
-        }
+/* =====================================================================
+   💤 飘出
+===================================================================== */
+.sleep-zzz{
+    position:absolute;
+    top:-6px;right:-14px;
+    font-size:17px;
+    opacity:0;
+    pointer-events:none;
+    z-index:2;
+}
+.pet-wrapper.sleeping .sleep-zzz{
+    animation:zzzFloat var(--zzz-dur) ease-out infinite;
+}
+@keyframes zzzFloat{
+    0%{opacity:0;transform:translate(0,0) scale(.5)}
+    22%{opacity:1;transform:translate(-4px,-10px) scale(.9)}
+    65%{opacity:.7;transform:translate(-16px,-32px) scale(1.1)}
+    100%{opacity:0;transform:translate(-26px,-54px) scale(1.25)}
+}
 
-        /* 隐藏 */
-        .pet-wrapper.hidden { display: none; }
+/* =====================================================================
+   气泡（打字机）
+===================================================================== */
+.pet-bubble{
+    position:absolute;
+    left:50%;bottom:calc(100% + 10px);
+    transform:translateX(-50%) translateY(6px) scale(.9);
+    background:rgba(30,30,45,.94);
+    color:#fff;
+    padding:8px 14px;
+    border-radius:14px 14px 4px 14px;
+    font-size:13px;font-weight:500;line-height:1.4;
+    box-shadow:0 6px 20px rgba(0,0,0,.28);
+    max-width:200px;min-height:30px;
+    opacity:0;
+    transition:all var(--bubble-dur) cubic-bezier(.22,1,.36,1);
+    pointer-events:none;
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.1);
+    white-space:nowrap;
+    z-index:10;
+}
+.pet-bubble.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+.pet-bubble::after{
+    content:'';position:absolute;
+    bottom:-5px;right:18px;
+    width:10px;height:10px;
+    background:rgba(30,30,45,.94);
+    transform:rotate(45deg);
+    border-right:1px solid rgba(255,255,255,.1);
+    border-bottom:1px solid rgba(255,255,255,.1);
+    border-radius:0 0 2px 0;
+}
+/* 贴顶翻转 */
+.pet-wrapper.bubble-below .pet-bubble{
+    bottom:auto;top:calc(100% + 10px);
+    border-radius:4px 14px 14px 14px;
+    transform:translateX(-50%) translateY(-6px) scale(.9);
+}
+.pet-wrapper.bubble-below .pet-bubble.show{
+    transform:translateX(-50%) translateY(0) scale(1);
+}
+.pet-wrapper.bubble-below .pet-bubble::after{
+    bottom:auto;top:-5px;right:18px;
+    border:none;
+    border-left:1px solid rgba(255,255,255,.1);
+    border-top:1px solid rgba(255,255,255,.1);
+    border-radius:2px 0 0 0;
+}
 
-        /* ============================================================
-           移动端
-           ============================================================ */
-        @media (max-width: 600px) {
-            .pet-wrapper { width: 88px; height: 88px; }
-            .pet-bubble { font-size: 12px; padding: 6px 11px; max-width: 170px; }
-            .toolbar-btn { width: 25px; height: 25px; font-size: 12px; }
-        }
+/* 低帧率禁用模糊 */
+body[data-fps="low"] .pet-bubble{
+    backdrop-filter:none;-webkit-backdrop-filter:none;
+    background:rgba(30,30,45,.98);
+}
 
-        @media (prefers-reduced-motion: reduce) {
-            .pet-body, .hedgehog-img, .pet-body::before,
-            .pet-toolbar, .pet-bubble { animation: none !important; }
-        }
-    </style>
+/* =====================================================================
+   工具栏
+===================================================================== */
+.pet-toolbar{
+    position:absolute;
+    left:50%;top:calc(100% + 6px);
+    transform:translateX(-50%) translateY(-6px);
+    display:flex;gap:2px;
+    background:rgba(30,30,45,.88);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    padding:3px;border-radius:18px;
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+    opacity:0;
+    transition:all var(--toolbar-dur) cubic-bezier(.22,1,.36,1);
+    pointer-events:none;
+    z-index:5;
+}
+.pet-wrapper.show-toolbar .pet-toolbar,
+.pet-wrapper:hover .pet-toolbar{
+    opacity:1;transform:translateX(-50%) translateY(0);
+    pointer-events:auto;
+}
+.pet-wrapper.toolbar-above .pet-toolbar{
+    top:auto;bottom:calc(100% + 6px);
+    transform:translateX(-50%) translateY(6px);
+}
+.pet-wrapper.toolbar-above.show-toolbar .pet-toolbar,
+.pet-wrapper.toolbar-above:hover .pet-toolbar{
+    transform:translateX(-50%) translateY(0);
+}
+body[data-fps="low"] .pet-toolbar{
+    backdrop-filter:none;-webkit-backdrop-filter:none;
+    background:rgba(30,30,45,.98);
+}
+
+.toolbar-btn{
+    width:28px;height:28px;
+    border-radius:50%;border:none;
+    background:transparent;
+    color:rgba(255,255,255,.75);
+    cursor:pointer;font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .18s;
+    -webkit-tap-highlight-color:transparent;
+}
+.toolbar-btn:hover{
+    background:rgba(255,255,255,.16);
+    color:#fff;transform:scale(1.18);
+}
+.toolbar-btn:active{transform:scale(.85)}
+
+/* =====================================================================
+   粒子层
+===================================================================== */
+.pet-particles{
+    position:fixed;top:0;left:0;
+    width:100%;height:100%;
+    pointer-events:none;
+    z-index:99998;
+    overflow:hidden;
+}
+.particle{
+    position:absolute;
+    pointer-events:none;
+    will-change:transform,opacity;
+    animation:particleFly var(--particle-dur) cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes particleFly{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}
+    20%{opacity:1}
+    100%{opacity:0;
+         transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy)))
+                   scale(1.15) rotate(var(--rot));}
+}
+
+/* =====================================================================
+   右键菜单
+===================================================================== */
+.pet-menu{
+    position:fixed;
+    background:rgba(28,28,42,.96);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:12px;
+    padding:5px;
+    box-shadow:0 12px 36px rgba(0,0,0,.4);
+    z-index:100000;
+    display:none;
+    min-width:140px;
+    animation:menuIn .18s cubic-bezier(.22,1,.36,1);
+}
+.pet-menu.show{display:block}
+@keyframes menuIn{
+    from{opacity:0;transform:scale(.9) translateY(-6px)}
+    to{opacity:1;transform:scale(1) translateY(0)}
+}
+.pet-menu-item{
+    padding:7px 12px;font-size:13px;
+    color:rgba(255,255,255,.82);
+    border-radius:8px;cursor:pointer;
+    display:flex;align-items:center;gap:8px;
+    transition:all .14s;user-select:none;
+    position:relative;
+}
+.pet-menu-item:hover{
+    background:rgba(255,255,255,.1);color:#fff;
+}
+.pet-menu-item.danger:hover{
+    background:rgba(239,68,68,.18);color:#f87171;
+}
+.pet-menu-item .mi-check{
+    margin-left:auto;
+    font-size:11px;
+    color:rgba(255,255,255,.5);
+}
+.pet-menu-item.active .mi-check{color:#58a6ff}
+.pet-menu-sep{
+    height:1px;background:rgba(255,255,255,.08);
+    margin:4px 8px;
+}
+
+/* =====================================================================
+   恢复按钮（隐藏后浮现）
+===================================================================== */
+.pet-restore{
+    position:fixed;
+    bottom:16px;right:16px;
+    width:44px;height:44px;
+    border-radius:50%;
+    background:rgba(30,30,45,.9);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 6px 20px rgba(0,0,0,.3);
+    display:none;
+    align-items:center;justify-content:center;
+    font-size:20px;
+    cursor:pointer;
+    z-index:99999;
+    transition:all .25s;
+    animation:restoreIn .4s cubic-bezier(.22,1,.36,1);
+}
+.pet-restore.show{display:flex}
+.pet-restore:hover{transform:scale(1.1);border-color:#58a6ff}
+.pet-restore:active{transform:scale(.92)}
+@keyframes restoreIn{
+    from{opacity:0;transform:scale(.6) translateY(10px)}
+    to{opacity:1;transform:scale(1) translateY(0)}
+}
+
+/* =====================================================================
+   移动端
+===================================================================== */
+@media (max-width:600px){
+    .pet-bubble{font-size:12px;padding:6px 11px;max-width:170px}
+    .toolbar-btn{width:25px;height:25px;font-size:12px}
+    .pet-restore{width:40px;height:40px;font-size:18px}
+}
+
+@media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{
+        animation-duration:.01ms !important;
+        transition-duration:.01ms !important;
+    }
+}
+</style>
 </head>
 <body>
 
-    <div class="pet-particles" id="petParticles"></div>
+<!-- 粒子层 -->
+<div class="pet-particles" id="petParticles"></div>
 
-    <div class="pet-menu" id="petMenu">
-        <div class="pet-menu-item" data-menu="love">❤️ 摸摸头</div>
-        <div class="pet-menu-item" data-menu="food">🍎 喂食</div>
-        <div class="pet-menu-item" data-menu="sleep">💤 哄睡</div>
-        <div class="pet-menu-sep"></div>
-        <div class="pet-menu-item" data-menu="spin">🔄 转圈圈</div>
-        <div class="pet-menu-item" data-menu="roam">🚶 散散步</div>
-        <div class="pet-menu-item" data-menu="reset">🏠 回角落</div>
-        <div class="pet-menu-sep"></div>
-        <div class="pet-menu-item danger" data-menu="hide">🙈 隐藏</div>
+<!-- 右键菜单 -->
+<div class="pet-menu" id="petMenu">
+    <div class="pet-menu-item" data-menu="love">❤️ <span>摸摸头</span></div>
+    <div class="pet-menu-item" data-menu="food">🍎 <span>喂食</span></div>
+    <div class="pet-menu-item" data-menu="sleep">💤 <span>哄睡</span></div>
+    <div class="pet-menu-sep"></div>
+    <div class="pet-menu-item" data-menu="spin">🔄 <span>转圈圈</span></div>
+    <div class="pet-menu-item" data-menu="roam">🚶 <span>散散步</span></div>
+    <div class="pet-menu-item" data-menu="reset">🏠 <span>回角落</span></div>
+    <div class="pet-menu-sep"></div>
+    <div class="pet-menu-item active" data-menu="sound">
+        🔊 <span>音效</span>
+        <span class="mi-check" id="soundCheck">开启</span>
     </div>
-
-    <div class="pet-wrapper" id="petWrapper">
-        <div class="pet-bubble" id="petBubble"></div>
-
-        <div class="pet-toolbar" id="petToolbar">
-            <button class="toolbar-btn" data-action="love" title="摸摸头">❤️</button>
-            <button class="toolbar-btn" data-action="food" title="喂食">🍎</button>
-            <button class="toolbar-btn" data-action="sleep" title="哄睡">💤</button>
-            <button class="toolbar-btn" data-action="spin" title="转圈">🔄</button>
-            <button class="toolbar-btn" data-action="reset" title="归位">🏠</button>
-        </div>
-
-        <div class="pet-body" id="petBody">
-            <div class="pet-tilt" id="petTilt">
-                <img class="hedgehog-img" id="hedgehogImg" src="idle-1.png" alt="小刺猬">
-            </div>
-            <div class="sleep-zzz">💤</div>
-        </div>
+    <div class="pet-menu-item" data-menu="fps">
+        📊 <span>帧率</span>
+        <span class="mi-check" id="fpsCheck">--</span>
     </div>
+    <div class="pet-menu-sep"></div>
+    <div class="pet-menu-item danger" data-menu="hide">🙈 <span>隐藏</span></div>
+</div>
+
+<!-- 恢复按钮 -->
+<div class="pet-restore" id="petRestore">🦔</div>
+
+<!-- 宠物 -->
+<div class="pet-wrapper" id="petWrapper">
+    <div class="pet-bubble" id="petBubble"></div>
+    <div class="pet-toolbar" id="petToolbar">
+        <button class="toolbar-btn" data-action="love"  title="摸摸头">❤️</button>
+        <button class="toolbar-btn" data-action="food"  title="喂食">🍎</button>
+        <button class="toolbar-btn" data-action="sleep" title="哄睡">💤</button>
+        <button class="toolbar-btn" data-action="spin"  title="转圈">🔄</button>
+        <button class="toolbar-btn" data-action="reset" title="归位">🏠</button>
+    </div>
+    <div class="pet-body" id="petBody">
+        <div class="pet-tilt" id="petTilt">
+            <img class="hedgehog-img" id="hedgehogImg" src="idle-1.png" alt="小刺猬" draggable="false">
+            <div class="pet-light" id="petLight"></div>
+        </div>
+        <div class="pet-shadow"></div>
+        <div class="sleep-zzz">💤</div>
+    </div>
+</div>
 
 <script>
-(function () {
-    'use strict';
+(function(){
+'use strict';
 
-    if (window.self === window.top) document.body.classList.add('standalone');
+// =====================================================================
+// 独立打开检测
+// =====================================================================
+if (window.self === window.top) document.body.classList.add('standalone');
 
-    // ============================================================
-    // 配置
-    // ============================================================
-    const IMAGES = {
-        idle1:     'idle-1.png',
-        idle2:     'idle-2.png',
-        blink:     'blink.png',
-        surprised: 'surprised.png',
-        happy:     'happy.png',
-        angry:     'angry.png',
-        sleep:     'sleep.png'
+// =====================================================================
+// 配置
+// =====================================================================
+const IMAGES = {
+    idle1:'idle-1.png', idle2:'idle-2.png',
+    blink:'blink.png', surprised:'surprised.png',
+    happy:'happy.png', angry:'angry.png',
+    sleep:'sleep.png'
+};
+
+const MSG = {
+    c1:['你戳我干什么？','干嘛呀～','有事吗？','唔？'],
+    c2:['又戳？','别闹～','住手！'],
+    c3:['别戳了！','再戳我就跑了！','哼！'],
+    c5:['喂！我生气了！','小心我咬你！','💢'],
+    c8:['行吧你赢了……','求你了放过我吧 🥺','我认输……'],
+    idle:[
+        '今天天气不错～','写代码好累啊','有人在吗？','我又饿了',
+        '☕ 来杯咖啡','记得按时吃饭','熬夜对身体不好哦',
+        '🦔 刺猬永不认输','在想什么呢……','要不要一起摸鱼？',
+        '嗯…发呆中…','有点无聊～'
+    ],
+    pet:['嘿嘿～好开心！','咕噜咕噜~','再摸摸嘛～','好舒服~'],
+    food:['🍎 好吃！谢谢～','吧唧吧唧…','还要还要！'],
+    sleep:['晚安～','好困……我先睡一会儿','呼呼呼……','有点困了……'],
+    wake:['唔……醒啦！','谁呀…好困…','呼啊——'],
+    spin:['转圈圈～','晕了晕了…','🔄 看我表演！'],
+    roam:['散散步～','走走走～','换个地方待会儿'],
+    longTimeNoSee:['好久不见…','你去哪儿了？','想你了～']
+};
+
+const KEYS = {
+    pos:'ciwei_pet_position',
+    sleeping:'ciwei_pet_sleeping',
+    last:'ciwei_pet_last_interaction',
+    clicks:'ciwei_pet_click_count',
+    hidden:'ciwei_pet_hidden',
+    sound:'ciwei_pet_sound'
+};
+
+const SIZE_DESKTOP = 120;
+const SIZE_MOBILE  = 88;
+
+// =====================================================================
+// DOM
+// =====================================================================
+const wrapper     = document.getElementById('petWrapper');
+const petBody     = document.getElementById('petBody');
+const petTilt     = document.getElementById('petTilt');
+const petLight    = document.getElementById('petLight');
+const img         = document.getElementById('hedgehogImg');
+const bubble      = document.getElementById('petBubble');
+const toolbar     = document.getElementById('petToolbar');
+const particlesEl = document.getElementById('petParticles');
+const menu        = document.getElementById('petMenu');
+const restoreBtn  = document.getElementById('petRestore');
+const soundCheck  = document.getElementById('soundCheck');
+const fpsCheck    = document.getElementById('fpsCheck');
+
+// =====================================================================
+// 全局状态
+// =====================================================================
+const S = {
+    x:0, y:0,
+    sleeping:false,
+    hidden:false,
+    clicks:0,
+    last:Date.now(),
+    face:'idle1',
+    dragging:false,
+    moved:false,
+    sClientX:0, sClientY:0,
+    sPosX:0, sPosY:0,
+    vx:0, vy:0,
+    lastMoveX:0, lastMoveY:0, lastMoveTime:0,
+    sliding:false,
+    soundOn:true,
+    mood:60,          // 0-100
+    // 定时器
+    bubbleTimer:null,
+    typeTimer:null,
+    resetTimer:null,
+    struggleTimer:null,
+    idleActionTimer:null,
+    zzzTimer:null,
+    avoidTimer:null,
+    avoidCooldown:0,
+    longTimeNoSeeShown:false,
+    // 鼠标位置（用于光线/眼神）
+    mouseX:window.innerWidth/2,
+    mouseY:window.innerHeight/2,
+    mouseActive:false
+};
+
+// 状态机
+let petState = 'idle';   // idle / happy / surprised / angry / sleep
+
+// 帧率
+let measuredFPS = 60;
+let fpsFrames = 0;
+let fpsStart = performance.now();
+let fpsHistory = [];
+
+// =====================================================================
+// 工具
+// =====================================================================
+const rand = (a,b)=>a+Math.random()*(b-a);
+const pick = arr=>arr[Math.floor(Math.random()*arr.length)];
+const clamp = (v,a,b)=>Math.max(a,Math.min(v,b));
+const isMobile = ()=>window.matchMedia('(max-width:600px)').matches;
+const getSize = ()=>isMobile()?SIZE_MOBILE:SIZE_DESKTOP;
+const lsGet = k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+const lsSet = (k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+
+// =====================================================================
+// 帧率检测
+// =====================================================================
+function tickFPS(now){
+    fpsFrames++;
+    const elapsed = now - fpsStart;
+    if (elapsed >= 500){
+        const measured = Math.round(fpsFrames * 1000 / elapsed);
+        fpsHistory.push(measured);
+        if (fpsHistory.length > 6) fpsHistory.shift();
+        measuredFPS = Math.round(
+            fpsHistory.reduce((a,b)=>a+b,0) / fpsHistory.length
+        );
+        document.documentElement.style.setProperty('--fps', measuredFPS);
+
+        // 分类
+        let cls = 'mid';
+        if (measuredFPS >= 90) cls = 'high';
+        else if (measuredFPS < 45) cls = 'low';
+        document.body.dataset.fps = cls;
+
+        // 更新菜单显示
+        if (fpsCheck) fpsCheck.textContent = measuredFPS + 'fps';
+
+        fpsFrames = 0;
+        fpsStart = now;
+    }
+}
+
+// 根据帧率调整粒子数量
+function particleFactor(){
+    if (measuredFPS >= 100) return 1.4;
+    if (measuredFPS >= 60)  return 1.0;
+    if (measuredFPS >= 40)  return 0.75;
+    return 0.5;
+}
+
+// =====================================================================
+// 位置
+// =====================================================================
+function setPos(x,y,animate){
+    S.x = x; S.y = y;
+    if (animate){
+        wrapper.classList.add('animating');
+        clearTimeout(wrapper._animTimer);
+        wrapper._animTimer = setTimeout(()=>wrapper.classList.remove('animating'),600);
+    }
+    wrapper.style.transform = `translate3d(${x}px,${y}px,0)`;
+    updateFlip();
+}
+
+function clampPos(x,y){
+    const s = getSize();
+    return {
+        x: clamp(x, 0, window.innerWidth  - s),
+        y: clamp(y, 0, window.innerHeight - s)
     };
+}
 
-    const MSG = {
-        c1: ['你戳我干什么？', '干嘛呀～', '有事吗？'],
-        c2: ['又戳？', '别闹～', '住手！'],
-        c3: ['别戳了！', '再戳我就跑了！', '哼！'],
-        c5: ['喂！我生气了！', '小心我咬你！', '💢'],
-        c8: ['行吧你赢了……', '求你了放过我吧 🥺', '我认输……'],
-        idle: [
-            '今天天气不错～', '写代码好累啊', '有人在吗？',
-            '我又饿了', '☕ 来杯咖啡', '记得按时吃饭',
-            '熬夜对身体不好哦', '🦔 刺猬永不认输',
-            '在想什么呢……', '要不要一起摸鱼？'
-        ],
-        pet:   ['嘿嘿～好开心！', '咕噜咕噜~', '再摸摸嘛～', '好舒服~'],
-        food:  ['🍎 好吃！谢谢～', '吧唧吧唧…', '还要还要！'],
-        sleep: ['晚安～', '好困……我先睡一会儿', '呼呼呼……'],
-        wake:  ['唔……醒啦！', '谁呀…好困…', '呼啊——'],
-        spin:  ['转圈圈～', '晕了晕了…', '🔄 看我表演！'],
-        roam:  ['散散步～', '走走走～', '换个地方待会儿']
-    };
+function updateFlip(){
+    const s = getSize();
+    if (S.y < 70) wrapper.classList.add('bubble-below');
+    else          wrapper.classList.remove('bubble-below');
 
-    const KEYS = {
-        pos:      'ciwei_pet_position',
-        sleeping: 'ciwei_pet_sleeping',
-        last:     'ciwei_pet_last_interaction',
-        clicks:   'ciwei_pet_click_count',
-        hidden:   'ciwei_pet_hidden'
-    };
+    if (S.y + s + 70 > window.innerHeight) wrapper.classList.add('toolbar-above');
+    else                                    wrapper.classList.remove('toolbar-above');
+}
 
-    // ============================================================
-    // DOM
-    // ============================================================
-    const wrapper       = document.getElementById('petWrapper');
-    const petBody       = document.getElementById('petBody');
-    const petTilt       = document.getElementById('petTilt');
-    const img           = document.getElementById('hedgehogImg');
-    const bubble        = document.getElementById('petBubble');
-    const toolbar       = document.getElementById('petToolbar');
-    const particlesLayer= document.getElementById('petParticles');
-    const menu          = document.getElementById('petMenu');
+// =====================================================================
+// 持久化
+// =====================================================================
+function savePos(){lsSet(KEYS.pos, JSON.stringify({x:Math.round(S.x), y:Math.round(S.y)}));}
+function saveLast(){S.last=Date.now(); lsSet(KEYS.last,String(S.last));}
+function saveSleep(){lsSet(KEYS.sleeping, S.sleeping?'true':'false');}
+function saveClicks(){lsSet(KEYS.clicks, String(S.clicks));}
+function saveHidden(){lsSet(KEYS.hidden, S.hidden?'true':'false');}
+function saveSound(){lsSet(KEYS.sound, S.soundOn?'true':'false');}
 
-    // ============================================================
-    // 状态
-    // ============================================================
-    const state = {
-        x: 0, y: 0,
-        sleeping: false,
-        hidden: false,
-        clicks: 0,
-        last: Date.now(),
-        face: 'idle1',
-        dragging: false,
-        moved: false,
-        // 拖拽起始
-        sClientX: 0, sClientY: 0,
-        sPosX: 0, sPosY: 0,
-        // 速度
-        vx: 0, vy: 0,
-        lastMoveX: 0, lastMoveY: 0, lastMoveTime: 0,
-        // 定时器
-        bubbleTimer: null,
-        typeTimer: null,
-        resetTimer: null,
-        struggleTimer: null,
-        idleActionTimer: null,
-        zzzTimer: null,
-        avoidTimer: null,
-        avoidCooldown: 0,
-        // 惯性
-        sliding: false,
-        // 视差
-        tiltTimer: null
-    };
+// =====================================================================
+// 图片 & 心情色
+// =====================================================================
+function setImage(name){
+    if (!IMAGES[name]) return;
+    S.face = name;
+    img.src = IMAGES[name];
+}
 
-    const SIZE = { desktop: 120, mobile: 88 };
-    const S = () => window.matchMedia('(max-width: 600px)').matches ? SIZE.mobile : SIZE.desktop;
-    const isMobile = () => window.matchMedia('(max-width: 600px)').matches;
+function updateMoodColor(){
+    // 心情 → 色相
+    // 差（0）→ 红橙色；好（100）→ 蓝色
+    const t = clamp(S.mood, 0, 100) / 100;
+    const r = Math.round(255 - t * 167);
+    const g = Math.round(140 + t * 26);
+    const b = Math.round(100 + t * 155);
+    document.documentElement.style.setProperty('--accent', `${r},${g},${b}`);
+}
 
-    // ============================================================
-    // 工具
-    // ============================================================
-    const rand = (a, b) => a + Math.random() * (b - a);
-    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-    const clamp = (v, a, b) => Math.max(a, Math.min(v, b));
-    const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-    const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+// =====================================================================
+// 音效（Web Audio 合成）
+// =====================================================================
+let audioCtx = null;
 
-    // ============================================================
-    // 位置控制（核心 — 用状态变量而非 getBoundingClientRect）
-    // ============================================================
-    function setPos(x, y, animate) {
-        state.x = x;
-        state.y = y;
+function initAudio(){
+    if (audioCtx) return;
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e){}
+}
 
-        if (animate) {
-            wrapper.classList.add('animating');
-            setTimeout(() => wrapper.classList.remove('animating'), 600);
+function tone({freq=440, dur=0.1, type='sine', gain=0.06, slideTo=null}){
+    if (!S.soundOn || !audioCtx) return;
+    try {
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t+dur);
+        g.gain.setValueAtTime(gain, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+        osc.connect(g).connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t+dur);
+    } catch(e){}
+}
+
+const SFX = {
+    click(){tone({freq:660, dur:0.09, type:'triangle', gain:0.05, slideTo:880});},
+    pet(){tone({freq:523, dur:0.15, type:'sine', gain:0.05, slideTo:784});},
+    food(){tone({freq:880, dur:0.18, type:'sine', gain:0.06, slideTo:1320});},
+    sleep(){tone({freq:392, dur:0.4, type:'sine', gain:0.05, slideTo:262});},
+    wake(){tone({freq:440, dur:0.25, type:'sine', gain:0.05, slideTo:880});},
+    spin(){tone({freq:1200, dur:0.35, type:'sawtooth', gain:0.035, slideTo:400});},
+    bounce(){tone({freq:200, dur:0.09, type:'square', gain:0.04, slideTo:120});}
+};
+
+// =====================================================================
+// 气泡（打字机）
+// =====================================================================
+function showBubble(text, duration, typewriter){
+    duration = duration || 2600;
+    typewriter = typewriter !== false;
+
+    clearTimeout(S.bubbleTimer);
+    clearInterval(S.typeTimer);
+
+    bubble.classList.add('show');
+
+    if (!typewriter){
+        bubble.textContent = text;
+    } else {
+        bubble.textContent = '';
+        let i = 0;
+        S.typeTimer = setInterval(()=>{
+            bubble.textContent += text[i++];
+            if (i >= text.length) clearInterval(S.typeTimer);
+        }, 30);
+    }
+
+    S.bubbleTimer = setTimeout(()=>{
+        bubble.classList.remove('show');
+    }, duration + (typewriter ? text.length * 30 : 0));
+}
+
+// =====================================================================
+// 粒子
+// =====================================================================
+function burst(emoji, count, origin){
+    count = Math.max(1, Math.round((count||4) * particleFactor()));
+    const rect = origin || petBody.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top  + rect.height/2;
+
+    for (let i=0; i<count; i++){
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.textContent = emoji;
+
+        const angle = rand(0, Math.PI * 2);
+        const dist  = rand(38, 78);
+
+        p.style.left = cx + 'px';
+        p.style.top  = cy + 'px';
+        p.style.setProperty('--dx', (Math.cos(angle)*dist).toFixed(0)+'px');
+        p.style.setProperty('--dy', (Math.sin(angle)*dist - 26).toFixed(0)+'px');
+        p.style.setProperty('--rot', rand(-50,50).toFixed(0)+'deg');
+        p.style.fontSize = rand(13,21).toFixed(0)+'px';
+        p.style.animationDelay = rand(0,0.14).toFixed(2)+'s';
+
+        particlesEl.appendChild(p);
+        setTimeout(()=>p.remove(), 1500);
+    }
+}
+
+// =====================================================================
+// 状态机 —— 从 idle 进入其他状态后自动回 idle
+// =====================================================================
+let faceRevertTimer = null;
+
+function setFace(name, revertMs){
+    setImage(name);
+    clearTimeout(faceRevertTimer);
+    if (revertMs){
+        faceRevertTimer = setTimeout(()=>{
+            if (S.sleeping) setImage('sleep');
+            else            setImage('idle1');
+            petState = 'idle';
+        }, revertMs);
+    }
+}
+
+// =====================================================================
+// 待机呼吸 + 眨眼
+// =====================================================================
+setInterval(()=>{
+    if (S.sleeping || S.hidden) return;
+    if (S.face === 'idle1' || S.face === 'idle2'){
+        setImage(S.face === 'idle1' ? 'idle2' : 'idle1');
+    }
+}, 1000);
+
+(function blinkLoop(){
+    setTimeout(()=>{
+        if (!S.sleeping && !S.hidden && S.face !== 'sleep' &&
+            (S.face === 'idle1' || S.face === 'idle2')){
+            const prev = S.face;
+            setImage('blink');
+            setTimeout(()=>{
+                if (S.face === 'blink') setImage(prev);
+            }, 280);
         }
+        blinkLoop();
+    }, rand(3000, 7000));
+})();
 
-        wrapper.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-        updateFlip();
-    }
-
-    // 边界约束 — 关键：用 SIZE() 而非 DOM 尺寸
-    function clampPos(x, y) {
-        const s = S();
-        return {
-            x: clamp(x, 0, window.innerWidth  - s),
-            y: clamp(y, 0, window.innerHeight - s)
-        };
-    }
-
-    // 智能翻转
-    function updateFlip() {
-        const s = S();
-        // 贴顶：气泡翻到下方
-        if (state.y < 70) wrapper.classList.add('bubble-below');
-        else               wrapper.classList.remove('bubble-below');
-
-        // 贴底：工具栏翻到上方
-        if (state.y + s + 70 > window.innerHeight) wrapper.classList.add('toolbar-above');
-        else                                        wrapper.classList.remove('toolbar-above');
-    }
-
-    // ============================================================
-    // 持久化
-    // ============================================================
-    function savePos() {
-        lsSet(KEYS.pos, JSON.stringify({ x: Math.round(state.x), y: Math.round(state.y) }));
-    }
-    function saveLast() {
-        state.last = Date.now();
-        lsSet(KEYS.last, String(state.last));
-    }
-    function saveSleep() { lsSet(KEYS.sleeping, state.sleeping ? 'true' : 'false'); }
-    function saveClicks() { lsSet(KEYS.clicks, String(state.clicks)); }
-    function saveHidden() { lsSet(KEYS.hidden, state.hidden ? 'true' : 'false'); }
-
-    // ============================================================
-    // 图片
-    // ============================================================
-    function setImage(name) {
-        if (!IMAGES[name]) return;
-        state.face = name;
-        img.src = IMAGES[name];
-    }
-
-    // ============================================================
-    // 气泡（打字机效果）
-    // ============================================================
-    function showBubble(text, duration, typewriter) {
-        duration = duration || 2600;
-        typewriter = typewriter !== false;
-
-        clearTimeout(state.bubbleTimer);
-        clearInterval(state.typeTimer);
-
-        bubble.classList.add('show');
-
-        if (!typewriter) {
-            bubble.textContent = text;
-        } else {
-            bubble.textContent = '';
-            let i = 0;
-            state.typeTimer = setInterval(() => {
-                bubble.textContent += text[i++];
-                if (i >= text.length) clearInterval(state.typeTimer);
-            }, 32);
-        }
-
-        state.bubbleTimer = setTimeout(() => {
-            bubble.classList.remove('show');
-        }, duration + (typewriter ? text.length * 32 : 0));
-    }
-
-    // ============================================================
-    // 粒子（带物理抛物线）
-    // ============================================================
-    function burst(emoji, count) {
-        count = count || 4;
-        const rect = petBody.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-
-        for (let i = 0; i < count; i++) {
-            const p = document.createElement('div');
-            p.className = 'particle';
-            p.textContent = emoji;
-
-            const angle = rand(0, Math.PI * 2);
-            const dist = rand(38, 78);
-
-            p.style.left = cx + 'px';
-            p.style.top  = cy + 'px';
-            p.style.setProperty('--dx', (Math.cos(angle) * dist).toFixed(0) + 'px');
-            p.style.setProperty('--dy', (Math.sin(angle) * dist - 26).toFixed(0) + 'px');
-            p.style.setProperty('--rot', rand(-50, 50).toFixed(0) + 'deg');
-            p.style.fontSize = rand(13, 21).toFixed(0) + 'px';
-            p.style.animationDelay = rand(0, 0.14).toFixed(2) + 's';
-
-            particlesLayer.appendChild(p);
-            setTimeout(() => p.remove(), 1350);
-        }
-    }
-
-    // ============================================================
-    // 待机循环
-    // ============================================================
-    setInterval(() => {
-        if (state.sleeping || state.hidden) return;
-        if (state.face === 'idle1' || state.face === 'idle2') {
-            setImage(state.face === 'idle1' ? 'idle2' : 'idle1');
-        }
-    }, 1000);
-
-    (function blinkLoop() {
-        setTimeout(() => {
-            if (!state.sleeping && !state.hidden &&
-                (state.face === 'idle1' || state.face === 'idle2')) {
-                const prev = state.face;
-                setImage('blink');
-                setTimeout(() => {
-                    if (state.face === 'blink') setImage(prev);
-                }, 280);
-            }
-            blinkLoop();
-        }, rand(3000, 7000));
-    })();
-
-    // ============================================================
-    // 空闲小动作
-    // ============================================================
-    function scheduleIdleAction() {
-        clearTimeout(state.idleActionTimer);
-        state.idleActionTimer = setTimeout(() => {
-            if (state.sleeping || state.hidden ||
-                state.dragging ||
-                Date.now() - state.last < 15000) {
-                scheduleIdleAction();
-                return;
-            }
-
-            const roll = Math.random();
-
-            if (roll < 0.2) {
-                // 张望
-                setImage('surprised');
-                setTimeout(() => {
-                    if (!state.sleeping && state.face === 'surprised') setImage('idle1');
-                }, 900);
-            } else if (roll < 0.38) {
-                // 吐泡泡
-                burst('💭', 2);
-            } else if (roll < 0.55) {
-                // 说话
-                showBubble(pick(MSG.idle));
-            } else if (roll < 0.7) {
-                // 小范围漫游
-                roam(120, 200);
-            } else if (roll < 0.82) {
-                // 自动睡觉
-                goSleep();
-            }
-
+// =====================================================================
+// 空闲小动作
+// =====================================================================
+function scheduleIdleAction(){
+    clearTimeout(S.idleActionTimer);
+    S.idleActionTimer = setTimeout(()=>{
+        if (S.sleeping || S.hidden || S.dragging || S.sliding ||
+            Date.now() - S.last < 15000){
             scheduleIdleAction();
-        }, rand(22000, 48000));
-    }
-
-    // ============================================================
-    // 睡觉
-    // ============================================================
-    function startZzz() {
-        clearInterval(state.zzzTimer);
-        state.zzzTimer = setInterval(() => {
-            if (!state.sleeping || state.hidden) return;
-            const r = petBody.getBoundingClientRect();
-            const z = document.createElement('div');
-            z.className = 'particle';
-            z.textContent = '💤';
-            z.style.left = (r.right - 8) + 'px';
-            z.style.top  = (r.top - 4) + 'px';
-            z.style.setProperty('--dx', rand(10, 28).toFixed(0) + 'px');
-            z.style.setProperty('--dy', '-58px');
-            z.style.setProperty('--rot', '0deg');
-            z.style.fontSize = '14px';
-            z.style.animationDuration = '2.1s';
-            particlesLayer.appendChild(z);
-            setTimeout(() => z.remove(), 2300);
-        }, 2200);
-    }
-
-    function stopZzz() { clearInterval(state.zzzTimer); state.zzzTimer = null; }
-
-    function goSleep() {
-        if (state.sleeping) return;
-        state.sleeping = true;
-        saveSleep(); saveLast();
-        wrapper.classList.add('sleeping');
-        wrapper.classList.remove('idle-float');
-        setImage('sleep');
-        showBubble(pick(MSG.sleep), 2200, false);
-        startZzz();
-    }
-
-    function wakeUp() {
-        if (!state.sleeping) return;
-        state.sleeping = false;
-        saveSleep(); saveLast();
-        wrapper.classList.remove('sleeping');
-        wrapper.classList.add('idle-float');
-        stopZzz();
-        setImage('surprised');
-        showBubble(pick(MSG.wake), 2000, false);
-        burst('✨', 3);
-        setTimeout(() => {
-            if (!state.sleeping && state.face === 'surprised') setImage('idle1');
-        }, 1200);
-    }
-
-    // ============================================================
-    // 点击
-    // ============================================================
-    function handleClick() {
-        saveLast();
-
-        if (state.sleeping) { wakeUp(); return; }
-
-        if (Date.now() - state.last > 5 * 60 * 1000) {
-            state.clicks = 0;
-        }
-
-        state.clicks++;
-        saveClicks();
-
-        let msg = '', face = 'happy';
-        const n = state.clicks;
-
-        if (n === 1)      { msg = pick(MSG.c1); face = 'happy'; }
-        else if (n === 2) { msg = pick(MSG.c2); face = 'happy'; }
-        else if (n === 3) { msg = pick(MSG.c3); face = 'surprised'; }
-        else if (n === 5) { msg = pick(MSG.c5); face = 'surprised'; }
-        else if (n >= 8)  { msg = pick(MSG.c8); face = 'angry'; }
-        else              { msg = pick(MSG.idle); face = 'happy'; }
-
-        if (n > 15) msg = '你戳了 ' + n + ' 次了，累不累？';
-
-        setImage(face);
-        showBubble(msg);
-        wrapper.classList.add('squash');
-        setTimeout(() => wrapper.classList.remove('squash'), 440);
-
-        burst(face === 'angry' ? '💢' : '✨', face === 'angry' ? 3 : 4);
-
-        clearTimeout(state.resetTimer);
-        state.resetTimer = setTimeout(() => {
-            if (!state.sleeping) setImage('idle1');
-            state.clicks = 0;
-            saveClicks();
-        }, 4000);
-
-        if (isMobile()) {
-            wrapper.classList.add('show-toolbar');
-            setTimeout(() => wrapper.classList.remove('show-toolbar'), 2600);
-        }
-    }
-
-    // ============================================================
-    // 拖拽（含挣扎表情 + 惯性）
-    // ============================================================
-    function startStruggle() {
-        clearInterval(state.struggleTimer);
-        let toggle = false;
-        state.struggleTimer = setInterval(() => {
-            setImage(toggle ? 'surprised' : 'angry');
-            toggle = !toggle;
-        }, 260);
-    }
-
-    function stopStruggle() {
-        clearInterval(state.struggleTimer);
-        state.struggleTimer = null;
-        if (!state.sleeping) setImage('idle1');
-    }
-
-    function onDown(e) {
-        if (e.target.closest('.pet-toolbar') || e.target.closest('.pet-menu')) return;
-        if (e.button && e.button !== 0) return;
-
-        state.dragging = true;
-        state.moved = false;
-        wrapper.classList.add('dragging');
-        wrapper.classList.remove('idle-float', 'animating');
-
-        const p = e.touches ? e.touches[0] : e;
-        state.sClientX = p.clientX;
-        state.sClientY = p.clientY;
-        state.sPosX = state.x;
-        state.sPosY = state.y;
-
-        state.vx = 0; state.vy = 0;
-        state.lastMoveX = p.clientX;
-        state.lastMoveY = p.clientY;
-        state.lastMoveTime = Date.now();
-
-        // 拖拽挣扎表情
-        startStruggle();
-
-        e.preventDefault();
-    }
-
-    function onMove(e) {
-        if (!state.dragging) return;
-        e.preventDefault();
-
-        const p = e.touches ? e.touches[0] : e;
-        const dx = p.clientX - state.sClientX;
-        const dy = p.clientY - state.sClientY;
-
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
-
-        const c = clampPos(state.sPosX + dx, state.sPosY + dy);
-        setPos(c.x, c.y, false);
-
-        // 计算速度
-        const now = Date.now();
-        const dt = now - state.lastMoveTime;
-        if (dt > 0) {
-            state.vx = (p.clientX - state.lastMoveX) / dt * 16;
-            state.vy = (p.clientY - state.lastMoveY) / dt * 16;
-        }
-        state.lastMoveX = p.clientX;
-        state.lastMoveY = p.clientY;
-        state.lastMoveTime = now;
-    }
-
-    function onUp(e) {
-        if (!state.dragging) return;
-        state.dragging = false;
-        wrapper.classList.remove('dragging');
-        wrapper.classList.add('idle-float');
-
-        stopStruggle();
-
-        if (!state.moved) {
-            handleClick();
             return;
         }
 
-        savePos();
-        saveLast();
+        const roll = Math.random();
 
-        // 惯性滑动
-        slideInertia();
-    }
-
-    function slideInertia() {
-        if (state.sliding) return;
-        state.sliding = true;
-
-        const friction = 0.93;
-        const bounce = 0.55;
-
-        function step() {
-            state.vx *= friction;
-            state.vy *= friction;
-
-            if (Math.abs(state.vx) < 0.25 && Math.abs(state.vy) < 0.25) {
-                state.sliding = false;
-                const c = clampPos(state.x, state.y);
-                setPos(c.x, c.y, false);
-                savePos();
-                return;
-            }
-
-            const s = S();
-            let nx = state.x + state.vx;
-            let ny = state.y + state.vy;
-
-            let hit = false;
-
-            if (nx < 0) { nx = 0; state.vx = -state.vx * bounce; hit = true; }
-            if (ny < 0) { ny = 0; state.vy = -state.vy * bounce; hit = true; }
-            if (nx > window.innerWidth  - s) { nx = window.innerWidth  - s; state.vx = -state.vx * bounce; hit = true; }
-            if (ny > window.innerHeight - s) { ny = window.innerHeight - s; state.vy = -state.vy * bounce; hit = true; }
-
-            if (hit) {
-                // 撞墙挤压
-                wrapper.classList.add('squash');
-                setTimeout(() => wrapper.classList.remove('squash'), 320);
-            }
-
-            setPos(nx, ny, false);
-            requestAnimationFrame(step);
+        if (roll < 0.18){
+            // 张望
+            setFace('surprised', 900);
+        } else if (roll < 0.35){
+            // 吐泡泡
+            burst('💭', 2);
+        } else if (roll < 0.5){
+            // 说话
+            showBubble(pick(MSG.idle));
+        } else if (roll < 0.68){
+            // 小范围漫游
+            roam(120, 200);
+        } else if (roll < 0.82){
+            // 自动睡觉
+            goSleep();
         }
-        requestAnimationFrame(step);
+        scheduleIdleAction();
+    }, rand(22000, 48000));
+}
+
+// =====================================================================
+// 睡觉
+// =====================================================================
+function startZzz(){
+    clearInterval(S.zzzTimer);
+    S.zzzTimer = setInterval(()=>{
+        if (!S.sleeping || S.hidden) return;
+        const r = petBody.getBoundingClientRect();
+        const z = document.createElement('div');
+        z.className = 'particle';
+        z.textContent = '💤';
+        z.style.left = (r.right-8)+'px';
+        z.style.top  = (r.top-4)+'px';
+        z.style.setProperty('--dx', rand(10,28).toFixed(0)+'px');
+        z.style.setProperty('--dy', '-58px');
+        z.style.setProperty('--rot','0deg');
+        z.style.fontSize = '14px';
+        z.style.animationDuration = '2.1s';
+        particlesEl.appendChild(z);
+        setTimeout(()=>z.remove(), 2300);
+    }, 2200);
+}
+
+function stopZzz(){clearInterval(S.zzzTimer); S.zzzTimer = null;}
+
+function goSleep(){
+    if (S.sleeping) return;
+    S.sleeping = true;
+    saveSleep(); saveLast();
+    wrapper.classList.add('sleeping');
+    wrapper.classList.remove('idle-float');
+    setImage('sleep');
+    petState = 'sleep';
+    showBubble(pick(MSG.sleep), 2200, false);
+    startZzz();
+    SFX.sleep();
+}
+
+function wakeUp(){
+    if (!S.sleeping) return;
+    S.sleeping = false;
+    saveSleep(); saveLast();
+    wrapper.classList.remove('sleeping');
+    wrapper.classList.add('idle-float');
+    stopZzz();
+    setImage('surprised');
+    petState = 'idle';
+    showBubble(pick(MSG.wake), 1800, false);
+    burst('✨', 3);
+    SFX.wake();
+    setTimeout(()=>{
+        if (!S.sleeping && S.face === 'surprised') setImage('idle1');
+    }, 1200);
+}
+
+// =====================================================================
+// 点击
+// =====================================================================
+function handleClick(){
+    saveLast();
+    initAudio();
+
+    if (S.sleeping){wakeUp(); return;}
+
+    if (Date.now() - S.last > 5*60*1000){
+        S.clicks = 0;
     }
 
-    wrapper.addEventListener('mousedown', onDown);
-    document.addEventListener('mousemove', onMove, { passive: false });
-    document.addEventListener('mouseup', onUp);
+    S.clicks++;
+    saveClicks();
+    S.mood = clamp(S.mood - 2, 0, 100);
+    updateMoodColor();
 
-    wrapper.addEventListener('touchstart', onDown, { passive: false });
-    document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('touchend', onUp);
+    let msg = '', face = 'happy';
+    const n = S.clicks;
 
-    img.addEventListener('dragstart', e => e.preventDefault());
+    if (n === 1)      {msg = pick(MSG.c1); face='happy';}
+    else if (n === 2) {msg = pick(MSG.c2); face='happy';}
+    else if (n === 3) {msg = pick(MSG.c3); face='surprised';}
+    else if (n === 5) {msg = pick(MSG.c5); face='surprised';}
+    else if (n >= 8)  {msg = pick(MSG.c8); face='angry';}
+    else              {msg = pick(MSG.idle); face='happy';}
 
-    // 双击转圈
-    let lastTap = 0;
-    wrapper.addEventListener('click', function (e) {
-        if (state.moved) return;
-        const now = Date.now();
-        if (now - lastTap < 300) {
-            e.stopPropagation();
-            doSpin();
-            lastTap = 0;
-        } else {
-            lastTap = now;
-        }
-    });
-
-    // ============================================================
-    // 动作
-    // ============================================================
-    function doPet() {
-        saveLast();
-        if (state.sleeping) { wakeUp(); return; }
-        setImage('happy');
-        showBubble(pick(MSG.pet), 1800, false);
-        burst('❤️', 5);
-        setTimeout(() => {
-            if (!state.sleeping && state.face === 'happy') setImage('idle1');
-        }, 1600);
+    if (n > 15) msg = '你戳了 '+n+' 次了，累不累？';
+    if (n === 25){
+        // 彩蛋
+        msg = '🎉 你解锁了隐藏彩蛋！';
+        burst('🎊', 12);
+        S.mood = 100;
+        updateMoodColor();
     }
 
-    function doFood() {
-        saveLast();
-        if (state.sleeping) wakeUp();
-        setImage('happy');
-        showBubble(pick(MSG.food), 1800, false);
-        burst('🍎', 4);
-        setTimeout(() => {
-            if (!state.sleeping && state.face === 'happy') setImage('idle1');
-        }, 1800);
+    setFace(face, 2400);
+    showBubble(msg);
+    wrapper.classList.add('squash');
+    setTimeout(()=>wrapper.classList.remove('squash'),440);
+
+    burst(face === 'angry' ? '💢' : '✨', face === 'angry' ? 3 : 4);
+    SFX.click();
+
+    clearTimeout(S.resetTimer);
+    S.resetTimer = setTimeout(()=>{
+        if (!S.sleeping) setImage('idle1');
+        S.clicks = 0;
+        saveClicks();
+    }, 4000);
+
+    if (isMobile()){
+        wrapper.classList.add('show-toolbar');
+        setTimeout(()=>wrapper.classList.remove('show-toolbar'), 2600);
+    }
+}
+
+// =====================================================================
+// 拖拽（含挣扎 + 惯性 + 撞墙）
+// =====================================================================
+function startStruggle(){
+    clearInterval(S.struggleTimer);
+    let toggle = false;
+    S.struggleTimer = setInterval(()=>{
+        setImage(toggle ? 'surprised' : 'angry');
+        toggle = !toggle;
+    }, 260);
+}
+function stopStruggle(){
+    clearInterval(S.struggleTimer);
+    S.struggleTimer = null;
+    if (!S.sleeping) setImage('idle1');
+}
+
+function onDown(e){
+    if (e.target.closest('.pet-toolbar') || e.target.closest('.pet-menu')) return;
+    if (e.button && e.button !== 0) return;
+
+    initAudio();
+
+    S.dragging = true;
+    S.moved = false;
+    wrapper.classList.add('dragging');
+    wrapper.classList.remove('idle-float','animating');
+
+    const p = e.touches ? e.touches[0] : e;
+    S.sClientX = p.clientX;
+    S.sClientY = p.clientY;
+    S.sPosX = S.x;
+    S.sPosY = S.y;
+
+    S.vx = 0; S.vy = 0;
+    S.lastMoveX = p.clientX;
+    S.lastMoveY = p.clientY;
+    S.lastMoveTime = performance.now();
+
+    if (!S.sleeping) startStruggle();
+
+    e.preventDefault();
+}
+
+function onMove(e){
+    if (!S.dragging) return;
+    e.preventDefault();
+
+    const p = e.touches ? e.touches[0] : e;
+    const dx = p.clientX - S.sClientX;
+    const dy = p.clientY - S.sClientY;
+
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) S.moved = true;
+
+    const c = clampPos(S.sPosX + dx, S.sPosY + dy);
+    setPos(c.x, c.y, false);
+
+    const now = performance.now();
+    const dt = now - S.lastMoveTime;
+    if (dt > 0){
+        S.vx = (p.clientX - S.lastMoveX) / dt * 16;
+        S.vy = (p.clientY - S.lastMoveY) / dt * 16;
+    }
+    S.lastMoveX = p.clientX;
+    S.lastMoveY = p.clientY;
+    S.lastMoveTime = now;
+}
+
+function onUp(){
+    if (!S.dragging) return;
+    S.dragging = false;
+    wrapper.classList.remove('dragging');
+    wrapper.classList.add('idle-float');
+
+    stopStruggle();
+
+    if (!S.moved){
+        handleClick();
+        return;
     }
 
-    function doSleepToggle() {
-        saveLast();
-        if (state.sleeping) wakeUp(); else goSleep();
+    savePos(); saveLast();
+
+    // 边缘吸附（距离 < 15px）
+    const s = getSize();
+    const margin = 8;
+    const dL = S.x;
+    const dR = window.innerWidth - s - S.x;
+    const dT = S.y;
+    const dB = window.innerHeight - s - S.y;
+    const minD = Math.min(dL, dR, dT, dB);
+
+    if (minD < 15 && minD > 0){
+        if (minD === dL)      {S.x = margin;}
+        else if (minD === dR) {S.x = window.innerWidth - s - margin;}
+        else if (minD === dT) {S.y = margin;}
+        else                  {S.y = window.innerHeight - s - margin;}
+        setPos(S.x, S.y, true);
+        setTimeout(savePos, 600);
+        return;
     }
 
-    function doSpin() {
-        saveLast();
-        if (state.sleeping) wakeUp();
-        wrapper.classList.add('spin');
-        setImage('happy');
-        showBubble(pick(MSG.spin), 1600, false);
-        burst('💫', 5);
-        setTimeout(() => wrapper.classList.remove('spin'), 850);
-        setTimeout(() => { if (!state.sleeping) setImage('idle1'); }, 1500);
+    // 惯性
+    if (Math.abs(S.vx) > 0.4 || Math.abs(S.vy) > 0.4){
+        S.sliding = true;
     }
+}
 
-    // 漫游（小范围随机移动）
-    function roam(maxDistX, maxDistY) {
-        if (state.sleeping || state.dragging) return;
+wrapper.addEventListener('mousedown', onDown);
+document.addEventListener('mousemove', onMove, {passive:false});
+document.addEventListener('mouseup',   onUp);
+wrapper.addEventListener('touchstart', onDown, {passive:false});
+document.addEventListener('touchmove', onMove, {passive:false});
+document.addEventListener('touchend',  onUp);
 
-        const s = S();
-        const dirX = Math.random() < 0.5 ? -1 : 1;
-        const dirY = Math.random() < 0.5 ? -1 : 1;
-        const dx = dirX * rand(maxDistX * 0.4, maxDistX);
-        const dy = dirY * rand(maxDistY * 0.4, maxDistY);
+img.addEventListener('dragstart', e=>e.preventDefault());
 
-        const target = clampPos(state.x + dx, state.y + dy);
-
-        if (Math.hypot(target.x - state.x, target.y - state.y) < 40) return;
-
-        setPos(target.x, target.y, true);
-        setTimeout(() => {
-            if (!state.sleeping) savePos();
-        }, 600);
-    }
-
-    function doRoam() {
-        saveLast();
-        if (state.sleeping) wakeUp();
-        setImage('happy');
-        showBubble(pick(MSG.roam), 1600, false);
-        roam(150, 250);
-        setTimeout(() => { if (!state.sleeping) setImage('idle1'); }, 1200);
-    }
-
-    function doReset() {
-        saveLast();
-        if (state.sleeping) wakeUp();
-
-        const s = S();
-        const tx = window.innerWidth  - s - 24;
-        const ty = window.innerHeight - s - 24;
-
-        setPos(tx, ty, true);
-        showBubble('归位！', 1500, false);
-        burst('🏠', 3);
-
-        setTimeout(() => savePos(), 600);
-    }
-
-    function doHide() {
-        state.hidden = true;
-        saveHidden();
-        wrapper.classList.add('hidden');
-    }
-
-    // ============================================================
-    // 工具栏
-    // ============================================================
-    toolbar.addEventListener('click', function (e) {
-        const btn = e.target.closest('.toolbar-btn');
-        if (!btn) return;
+// 双击转圈
+let lastTap = 0;
+wrapper.addEventListener('click', e=>{
+    if (S.moved) return;
+    const now = performance.now();
+    if (now - lastTap < 300){
         e.stopPropagation();
-        const act = btn.dataset.action;
-        if (act === 'love')       doPet();
-        else if (act === 'food')  doFood();
-        else if (act === 'sleep') doSleepToggle();
-        else if (act === 'spin')  doSpin();
-        else if (act === 'reset') doReset();
-    });
-
-    toolbar.addEventListener('mouseenter', () => wrapper.classList.add('show-toolbar'));
-    toolbar.addEventListener('mouseleave', () => wrapper.classList.remove('show-toolbar'));
-
-    // ============================================================
-    // 右键菜单
-    // ============================================================
-    wrapper.addEventListener('contextmenu', function (e) {
-        e.preventDefault();
-        if (isMobile()) return;
-
-        menu.style.left = e.clientX + 'px';
-        menu.style.top  = e.clientY + 'px';
-        menu.classList.add('show');
-
-        // 边界调整
-        const mr = menu.getBoundingClientRect();
-        if (mr.right  > window.innerWidth)  menu.style.left = (window.innerWidth  - mr.width  - 8) + 'px';
-        if (mr.bottom > window.innerHeight) menu.style.top  = (window.innerHeight - mr.height - 8) + 'px';
-    });
-
-    menu.addEventListener('click', function (e) {
-        const item = e.target.closest('[data-menu]');
-        if (!item) return;
-        const act = item.dataset.menu;
-        menu.classList.remove('show');
-
-        if (act === 'love')       doPet();
-        else if (act === 'food')  doFood();
-        else if (act === 'sleep') doSleepToggle();
-        else if (act === 'spin')  doSpin();
-        else if (act === 'roam')  doRoam();
-        else if (act === 'reset') doReset();
-        else if (act === 'hide')  doHide();
-    });
-
-    document.addEventListener('click', function (e) {
-        if (!e.target.closest('.pet-menu') && !e.target.closest('#petWrapper')) {
-            menu.classList.remove('show');
-        }
-    });
-
-    // ============================================================
-    // 视线跟随（3D 倾斜）
-    // ============================================================
-    document.addEventListener('mousemove', function (e) {
-        if (isMobile() || state.dragging || state.hidden || state.sleeping) return;
-
-        clearTimeout(state.tiltTimer);
-        state.tiltTimer = setTimeout(() => {
-            const s = S();
-            const cx = state.x + s / 2;
-            const cy = state.y + s / 2;
-
-            const dx = (e.clientX - cx) / window.innerWidth;
-            const dy = (e.clientY - cy) / window.innerHeight;
-
-            const rx = clamp(dy * 14, -9, 9);
-            const ry = clamp(-dx * 14, -9, 9);
-
-            petTilt.style.transform = `perspective(500px) rotateX(${rx}deg) rotateY(${ry}deg)`;
-        }, 20);
-    });
-
-    document.addEventListener('mouseleave', function () {
-        petTilt.style.transform = '';
-    });
-
-    // 鼠标悬停时放大
-    wrapper.addEventListener('mouseenter', function () {
-        if (!isMobile() && !state.dragging && !state.sleeping && !state.hidden) {
-            petTilt.style.transform = 'perspective(500px) scale(1.04)';
-        }
-    });
-    wrapper.addEventListener('mouseleave', function () {
-        if (!state.dragging) petTilt.style.transform = '';
-    });
-
-    // ============================================================
-    // 智能避让（鼠标靠近时让开）
-    // ============================================================
-    document.addEventListener('mousemove', function (e) {
-        if (isMobile() || state.dragging || state.sleeping || state.hidden) return;
-        if (Date.now() < state.avoidCooldown) return;
-
-        const s = S();
-        const cx = state.x + s / 2;
-        const cy = state.y + s / 2;
-        const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-
-        if (dist < 85 && !state.avoidTimer) {
-            state.avoidTimer = setTimeout(() => {
-                if (state.dragging || state.sleeping) { state.avoidTimer = null; return; }
-
-                // 远离鼠标方向移动
-                const dx = cx - e.clientX;
-                const dy = cy - e.clientY;
-                const len = Math.hypot(dx, dy) || 1;
-                const moveDist = 46;
-
-                const tx = state.x + (dx / len) * moveDist;
-                const ty = state.y + (dy / len) * moveDist;
-                const c = clampPos(tx, ty);
-
-                if (Math.hypot(c.x - state.x, c.y - state.y) > 15) {
-                    setPos(c.x, c.y, true);
-                    setTimeout(savePos, 600);
-                }
-
-                state.avoidCooldown = Date.now() + 8000;
-                state.avoidTimer = null;
-            }, 900);
-        } else if (dist > 120) {
-            clearTimeout(state.avoidTimer);
-            state.avoidTimer = null;
-        }
-    });
-
-    // ============================================================
-    // 后台省电
-    // ============================================================
-    document.addEventListener('visibilitychange', function () {
-        if (document.hidden) {
-            savePos(); saveSleep(); saveClicks();
-            lsSet(KEYS.last, String(state.last));
-        }
-    });
-
-    // ============================================================
-    // 恢复状态
-    // ============================================================
-    function restore() {
-        // 位置
-        let saved = null;
-        try { saved = JSON.parse(lsGet(KEYS.pos) || 'null'); } catch (e) {}
-        const s = S();
-
-        if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
-            const c = clampPos(saved.x, saved.y);
-            setPos(c.x, c.y, false);
-        } else {
-            setPos(window.innerWidth - s - 24, window.innerHeight - s - 24, false);
-        }
-
-        // 睡觉
-        if (lsGet(KEYS.sleeping) === 'true') {
-            state.sleeping = true;
-            wrapper.classList.add('sleeping');
-            setImage('sleep');
-            startZzz();
-        } else {
-            wrapper.classList.add('idle-float');
-            setImage('idle1');
-        }
-
-        // 点击次数
-        state.clicks = parseInt(lsGet(KEYS.clicks) || '0', 10) || 0;
-
-        // 上次交互
-        const last = parseInt(lsGet(KEYS.last) || '0', 10);
-        if (last > 0) state.last = last;
-
-        // 隐藏
-        if (lsGet(KEYS.hidden) === 'true') {
-            state.hidden = true;
-            wrapper.classList.add('hidden');
-        }
+        doSpin();
+        lastTap = 0;
+    } else {
+        lastTap = now;
     }
+});
 
-    // 窗口变化
-    let resizeTimer = null;
-    window.addEventListener('resize', function () {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            const c = clampPos(state.x, state.y);
+// 双击空白让刺猬走过去
+document.addEventListener('dblclick', e=>{
+    if (e.target.closest('#petWrapper') || e.target.closest('.pet-menu') ||
+        e.target.closest('.pet-restore')) return;
+    if (S.sleeping) return;
+    walkTo(e.clientX - getSize()/2, e.clientY - getSize()/2);
+});
+
+// =====================================================================
+// 物理 & 视觉主循环（rAF + deltaTime，适配屏幕刷新率）
+// =====================================================================
+let lastFrame = performance.now();
+let roamTarget = null;
+
+function mainLoop(now){
+    // 帧率检测
+    tickFPS(now);
+
+    // dt（秒），限制最大 50ms 防跳帧
+    let dt = (now - lastFrame) / 1000;
+    lastFrame = now;
+    if (dt > 0.05) dt = 0.05;
+
+    // 1. 惯性滑动
+    if (S.sliding && !S.dragging){
+        const friction = Math.pow(0.06, dt); // 每秒衰减到 6%
+        S.vx *= friction;
+        S.vy *= friction;
+
+        if (Math.abs(S.vx) < 0.3 && Math.abs(S.vy) < 0.3){
+            S.sliding = false;
+            const c = clampPos(S.x, S.y);
             setPos(c.x, c.y, false);
             savePos();
-        }, 150);
-    });
+        } else {
+            const s = getSize();
+            let nx = S.x + S.vx * dt * 60;
+            let ny = S.y + S.vy * dt * 60;
+            let hit = false;
 
-    window.addEventListener('beforeunload', function () {
-        savePos(); saveSleep(); saveClicks();
-        lsSet(KEYS.last, String(state.last));
-    });
+            if (nx < 0){ nx = 0; S.vx = -S.vx * 0.55; hit = true; }
+            if (ny < 0){ ny = 0; S.vy = -S.vy * 0.55; hit = true; }
+            if (nx > window.innerWidth  - s){ nx = window.innerWidth  - s; S.vx = -S.vx * 0.55; hit = true; }
+            if (ny > window.innerHeight - s){ ny = window.innerHeight - s; S.vy = -S.vy * 0.55; hit = true; }
 
-    // ============================================================
-    // 启动
-    // ============================================================
-    Object.values(IMAGES).forEach(src => { const i = new Image(); i.src = src; });
+            setPos(nx, ny, false);
 
-    restore();
-    requestAnimationFrame(() => {
-        wrapper.classList.add('ready');
-    });
-
-    scheduleIdleAction();
-
-    setTimeout(() => {
-        if (!state.sleeping && !state.hidden) {
-            showBubble('你好呀～我是小刺猬 🦔', 2600, false);
-            burst('✨', 4);
+            if (hit){
+                wrapper.classList.add('squash');
+                setTimeout(()=>wrapper.classList.remove('squash'), 300);
+                // 撞墙灰尘
+                const side = nx <= 0 ? 'left' :
+                             nx >= window.innerWidth - s ? 'right' :
+                             ny <= 0 ? 'top' : 'bottom';
+                const rect = petBody.getBoundingClientRect();
+                const origin = side === 'left'   ? {left:rect.left-10, top:rect.top+rect.height/2, width:20, height:20} :
+                               side === 'right'  ? {left:rect.right-10, top:rect.top+rect.height/2, width:20, height:20} :
+                               side === 'top'    ? {left:rect.left+rect.width/2, top:rect.top-10, width:20, height:20} :
+                                                   {left:rect.left+rect.width/2, top:rect.bottom-10, width:20, height:20};
+                burst('💨', 4, origin);
+                SFX.bounce();
+            }
         }
-    }, 1200);
+    }
 
-    console.log('🦔 CiweiPet · 高级版已启动');
-    console.log('✨ 特性：视线跟随 · 拖拽挣扎 · 惯性滑动 · 撞墙反弹 · 智能避让 · 自主漫游 · 双击转圈');
+    // 2. 智能避让已在事件中处理
+
+    // 3. 环境光跟随鼠标
+    if (S.mouseActive && !S.hidden){
+        const s = getSize();
+        const cx = S.x + s/2;
+        const cy = S.y + s/2;
+        const lx = clamp(((S.mouseX - (S.x - 18)) / (s + 36)) * 100, 0, 100);
+        const ly = clamp(((S.mouseY - (S.y - 18)) / (s + 36)) * 100, 0, 100);
+        petLight.style.setProperty('--light-x', lx.toFixed(1) + '%');
+        petLight.style.setProperty('--light-y', ly.toFixed(1) + '%');
+    }
+
+    requestAnimationFrame(mainLoop);
+}
+requestAnimationFrame(mainLoop);
+
+// =====================================================================
+// 视线跟随（3D 倾斜 + 微平移）
+// =====================================================================
+document.addEventListener('mousemove', e=>{
+    S.mouseX = e.clientX;
+    S.mouseY = e.clientY;
+    S.mouseActive = true;
+
+    if (isMobile() || S.dragging || S.hidden || S.sleeping) return;
+
+    const s = getSize();
+    const cx = S.x + s/2;
+    const cy = S.y + s/2;
+
+    const dx = (e.clientX - cx) / window.innerWidth;
+    const dy = (e.clientY - cy) / window.innerHeight;
+
+    const rx = clamp(dy * 14, -9, 9);
+    const ry = clamp(-dx * 14, -9, 9);
+
+    petTilt.style.transform = `perspective(500px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+});
+
+document.addEventListener('mouseleave', ()=>{
+    S.mouseActive = false;
+    petTilt.style.transform = '';
+});
+
+wrapper.addEventListener('mouseenter', ()=>{
+    if (!isMobile() && !S.dragging && !S.sleeping && !S.hidden){
+        // 悬停放大叠加在倾斜上，用 petTilt 的临时 transform
+        petTilt.style.transform += ' scale(1.04)';
+    }
+});
+wrapper.addEventListener('mouseleave', ()=>{
+    if (!S.dragging) petTilt.style.transform = '';
+});
+
+// =====================================================================
+// 智能避让
+// =====================================================================
+document.addEventListener('mousemove', e=>{
+    if (isMobile() || S.dragging || S.sleeping || S.hidden) return;
+    if (performance.now() < S.avoidCooldown) return;
+
+    const s = getSize();
+    const cx = S.x + s/2;
+    const cy = S.y + s/2;
+    const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+
+    if (dist < 85 && !S.avoidTimer){
+        S.avoidTimer = setTimeout(()=>{
+            if (S.dragging || S.sleeping){S.avoidTimer = null; return;}
+
+            const dx = cx - e.clientX;
+            const dy = cy - e.clientY;
+            const len = Math.hypot(dx, dy) || 1;
+            const moveDist = 46;
+
+            const tx = S.x + (dx/len) * moveDist;
+            const ty = S.y + (dy/len) * moveDist;
+            const c = clampPos(tx, ty);
+
+            if (Math.hypot(c.x - S.x, c.y - S.y) > 15){
+                setPos(c.x, c.y, true);
+                setTimeout(savePos, 600);
+            }
+            S.avoidCooldown = performance.now() + 8000;
+            S.avoidTimer = null;
+        }, 900);
+    } else if (dist > 120){
+        clearTimeout(S.avoidTimer);
+        S.avoidTimer = null;
+    }
+});
+
+// =====================================================================
+// 动作
+// =====================================================================
+function doPet(){
+    saveLast(); initAudio();
+    S.mood = clamp(S.mood + 8, 0, 100);
+    updateMoodColor();
+
+    if (S.sleeping){wakeUp(); return;}
+    setFace('happy', 1600);
+    showBubble(pick(MSG.pet), 1800, false);
+    burst('❤️', 5);
+    SFX.pet();
+}
+
+function doFood(){
+    saveLast(); initAudio();
+    S.mood = clamp(S.mood + 12, 0, 100);
+    updateMoodColor();
+
+    if (S.sleeping) wakeUp();
+    setFace('happy', 1800);
+    showBubble(pick(MSG.food), 1800, false);
+    burst('🍎', 4);
+    SFX.food();
+}
+
+function doSleepToggle(){
+    saveLast(); initAudio();
+    if (S.sleeping) wakeUp(); else goSleep();
+}
+
+function doSpin(){
+    saveLast(); initAudio();
+    if (S.sleeping) wakeUp();
+    wrapper.classList.add('spin');
+    setFace('happy', 1500);
+    showBubble(pick(MSG.spin), 1600, false);
+    burst('💫', 5);
+    SFX.spin();
+    setTimeout(()=>wrapper.classList.remove('spin'), 880);
+}
+
+function roam(maxDistX, maxDistY){
+    if (S.sleeping || S.dragging || S.sliding) return;
+
+    const dirX = Math.random() < 0.5 ? -1 : 1;
+    const dirY = Math.random() < 0.5 ? -1 : 1;
+    const dx = dirX * rand(maxDistX * 0.4, maxDistX);
+    const dy = dirY * rand(maxDistY * 0.4, maxDistY);
+
+    const target = clampPos(S.x + dx, S.y + dy);
+
+    if (Math.hypot(target.x - S.x, target.y - S.y) < 40) return;
+
+    // 走路动画（弹跳）
+    walkTo(target.x, target.y);
+}
+
+function doRoam(){
+    saveLast();
+    if (S.sleeping) wakeUp();
+    showBubble(pick(MSG.roam), 1500, false);
+    roam(150, 250);
+}
+
+// 走向目标位置（带弹跳）
+function walkTo(tx, ty){
+    if (S.sleeping) return;
+    const c = clampPos(tx, ty);
+    const sx = S.x, sy = S.y;
+    const dist = Math.hypot(c.x - sx, c.y - sy);
+    const dur = clamp(dist * 4, 400, 1800);
+    const startTime = performance.now();
+
+    S.sliding = false;
+
+    function step(now){
+        const t = Math.min(1, (now - startTime) / dur);
+        // easeInOutQuad
+        const e = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2)/2;
+
+        const nx = sx + (c.x - sx) * e;
+        const ny = sy + (c.y - sy) * e;
+        setPos(nx, ny, false);
+
+        // 弹跳
+        const bounce = Math.sin(t * Math.PI * 8) * 2.5;
+        petBody.style.transform = `translateY(${bounce}px)`;
+
+        if (t < 1){
+            requestAnimationFrame(step);
+        } else {
+            petBody.style.transform = '';
+            savePos();
+        }
+    }
+    requestAnimationFrame(step);
+}
+
+function doReset(){
+    saveLast(); initAudio();
+    if (S.sleeping) wakeUp();
+
+    const s = getSize();
+    const tx = window.innerWidth  - s - 24;
+    const ty = window.innerHeight - s - 24;
+
+    setPos(tx, ty, true);
+    showBubble('归位！', 1500, false);
+    burst('🏠', 3);
+    setTimeout(savePos, 600);
+}
+
+function doHide(){
+    S.hidden = true;
+    saveHidden();
+    wrapper.classList.add('hidden');
+    restoreBtn.classList.add('show');
+}
+
+function doShow(){
+    S.hidden = false;
+    saveHidden();
+    wrapper.classList.remove('hidden');
+    restoreBtn.classList.remove('show');
+}
+
+// =====================================================================
+// 工具栏
+// =====================================================================
+toolbar.addEventListener('click', e=>{
+    const btn = e.target.closest('.toolbar-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    const act = btn.dataset.action;
+    if (act === 'love')       doPet();
+    else if (act === 'food')  doFood();
+    else if (act === 'sleep') doSleepToggle();
+    else if (act === 'spin')  doSpin();
+    else if (act === 'reset') doReset();
+});
+
+toolbar.addEventListener('mouseenter', ()=>wrapper.classList.add('show-toolbar'));
+toolbar.addEventListener('mouseleave', ()=>wrapper.classList.remove('show-toolbar'));
+
+// 恢复按钮
+restoreBtn.addEventListener('click', doShow);
+
+// =====================================================================
+// 右键菜单
+// =====================================================================
+wrapper.addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    if (isMobile()) return;
+
+    menu.style.left = e.clientX + 'px';
+    menu.style.top  = e.clientY + 'px';
+    menu.classList.add('show');
+
+    // 边界调整
+    const mr = menu.getBoundingClientRect();
+    if (mr.right  > window.innerWidth)  menu.style.left = (window.innerWidth  - mr.width  - 8) + 'px';
+    if (mr.bottom > window.innerHeight) menu.style.top  = (window.innerHeight - mr.height - 8) + 'px';
+
+    // 更新菜单显示
+    soundCheck.textContent = S.soundOn ? '开启' : '关闭';
+    fpsCheck.textContent = measuredFPS + 'fps';
+});
+
+menu.addEventListener('click', e=>{
+    const item = e.target.closest('[data-menu]');
+    if (!item) return;
+    const act = item.dataset.menu;
+
+    if (act === 'love')       {doPet(); menu.classList.remove('show');}
+    else if (act === 'food')  {doFood(); menu.classList.remove('show');}
+    else if (act === 'sleep') {doSleepToggle(); menu.classList.remove('show');}
+    else if (act === 'spin')  {doSpin(); menu.classList.remove('show');}
+    else if (act === 'roam')  {doRoam(); menu.classList.remove('show');}
+    else if (act === 'reset') {doReset(); menu.classList.remove('show');}
+    else if (act === 'hide')  {doHide(); menu.classList.remove('show');}
+    else if (act === 'sound') {
+        S.soundOn = !S.soundOn;
+        saveSound();
+        soundCheck.textContent = S.soundOn ? '开启' : '关闭';
+        item.classList.toggle('active', S.soundOn);
+        if (S.soundOn){initAudio(); SFX.pet();}
+    }
+    // fps 项只展示
+});
+
+document.addEventListener('click', e=>{
+    if (!e.target.closest('.pet-menu') && !e.target.closest('#petWrapper')){
+        menu.classList.remove('show');
+    }
+});
+
+// =====================================================================
+// 键盘快捷键
+// =====================================================================
+document.addEventListener('keydown', e=>{
+    // 避免与输入框冲突
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const key = e.key.toLowerCase();
+    if (key === 'h'){ S.hidden ? doShow() : doHide(); }
+    else if (key === 'r'){ doReset(); }
+    else if (key === 's'){ doSleepToggle(); }
+    else if (key === 'p'){ doPet(); }
+    else if (key === 'f'){ doFood(); }
+    else if (key === ' '){ doSpin(); e.preventDefault(); }
+});
+
+// =====================================================================
+// 后台省电
+// =====================================================================
+document.addEventListener('visibilitychange', ()=>{
+    if (document.hidden){
+        savePos(); saveSleep(); saveClicks();
+        lsSet(KEYS.last, String(S.last));
+    } else {
+        lastFrame = performance.now();
+    }
+});
+
+// =====================================================================
+// 恢复状态
+// =====================================================================
+function restore(){
+    // 位置
+    let saved = null;
+    try { saved = JSON.parse(lsGet(KEYS.pos) || 'null'); } catch(e){}
+    const s = getSize();
+
+    if (saved && typeof saved.x === 'number' && typeof saved.y === 'number'){
+        const c = clampPos(saved.x, saved.y);
+        setPos(c.x, c.y, false);
+    } else {
+        setPos(window.innerWidth - s - 24, window.innerHeight - s - 24, false);
+    }
+
+    // 睡觉
+    if (lsGet(KEYS.sleeping) === 'true'){
+        S.sleeping = true;
+        wrapper.classList.add('sleeping');
+        setImage('sleep');
+        startZzz();
+    } else {
+        wrapper.classList.add('idle-float');
+        setImage('idle1');
+    }
+
+    // 点击次数
+    S.clicks = parseInt(lsGet(KEYS.clicks) || '0', 10) || 0;
+
+    // 上次交互
+    const last = parseInt(lsGet(KEYS.last) || '0', 10);
+    if (last > 0) S.last = last;
+
+    // 隐藏
+    if (lsGet(KEYS.hidden) === 'true'){
+        S.hidden = true;
+        wrapper.classList.add('hidden');
+        restoreBtn.classList.add('show');
+    }
+
+    // 音效
+    S.soundOn = lsGet(KEYS.sound) !== 'false';
+    soundCheck.textContent = S.soundOn ? '开启' : '关闭';
+
+    // 心情色
+    updateMoodColor();
+}
+
+// 窗口变化
+let resizeTimer = null;
+window.addEventListener('resize', ()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(()=>{
+        const c = clampPos(S.x, S.y);
+        setPos(c.x, c.y, false);
+        savePos();
+    }, 150);
+});
+
+window.addEventListener('beforeunload', ()=>{
+    savePos(); saveSleep(); saveClicks();
+    lsSet(KEYS.last, String(S.last));
+});
+
+// =====================================================================
+// 启动
+// =====================================================================
+// 预加载图片
+Object.values(IMAGES).forEach(src=>{
+    const i = new Image();
+    i.src = src;
+});
+
+restore();
+requestAnimationFrame(()=>wrapper.classList.add('ready'));
+scheduleIdleAction();
+
+// 开场问候（若长时间未互动，提示"好久不见"）
+setTimeout(()=>{
+    if (S.sleeping || S.hidden) return;
+    const idleFor = Date.now() - S.last;
+    if (idleFor > 24*60*60*1000){
+        showBubble(pick(MSG.longTimeNoSee), 3200, false);
+    } else {
+        showBubble('你好呀～我是小刺猬 🦔', 2600, false);
+    }
+    burst('✨', 4);
+}, 1200);
+
+// 控制台信息
+console.log('%c🦔 CiweiPet 终极版已启动','font-size:16px;color:#58a6ff;font-weight:bold');
+console.log('⚡ 帧率：' + measuredFPS + 'fps');
+console.log('✨ 特性：视线跟随 · 环境光 · 拖拽挣扎 · 惯性滑动 · 撞墙反弹');
+console.log('       智能避让 · 自主漫游 · 双击走位 · 边缘吸附 · 心情系统');
+console.log('       音效合成 · 打字机气泡 · 键盘快捷键 · 全帧率适配');
+console.log('⌨️  快捷键：H 隐藏 / R 归位 / S 睡觉 / P 摸头 / F 喂食 / 空格 转圈');
+
 })();
 </script>
 </body>
