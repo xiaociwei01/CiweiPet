@@ -1498,21 +1498,6 @@ window.addEventListener('beforeunload', function () {
     lsSet(KEYS.last, String(S.last));
 });
 
-// ============================================================
-// Service Worker 注册（PWA）
-// ============================================================
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js')
-            .then(function (reg) {
-                console.log('✅ SW 已注册:', reg.scope);
-            })
-            .catch(function (err) {
-                console.warn('SW 注册失败:', err);
-            });
-    });
-}
-
 console.log('%c🦔 CiweiPet 独立版 v2 已启动', 'font-size:16px;color:#58a6ff;font-weight:bold');
 console.log('⚡ ' + measuredFPS + 'fps · ' + getScalePercent() + '%');
 console.log('✨ 全部功能：缩放 · 长按菜单 · 音效 · 帧率自适应 · 视线跟随 · 环境光');
