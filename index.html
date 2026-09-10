@@ -5,20 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🦔 小刺猬宠物</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* ================================================================
+           全局重置
+        ================================================================ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             overflow: hidden;
             background: transparent;
             font-family: -apple-system, 'PingFang SC', 'Segoe UI', 'Inter', sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
+            user-select: none; -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -27,792 +24,1092 @@
         }
 
         /* ================================================================
-           宠物主容器（可拖拽）
+           宠物主容器
         ================================================================ */
         .pet-wrapper {
             position: fixed;
-            bottom: 24px;
-            right: 24px;
+            left: 0; top: 0;
             z-index: 99999;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
             cursor: grab;
-            transition: transform 0.15s ease-out;
-            will-change: transform;
+            will-change: transform, left, top;
+            transition: filter 0.2s ease;
         }
-
         .pet-wrapper.dragging {
             cursor: grabbing;
             transition: none;
         }
 
+        /* 拖拽中眼睛变 >_<（用CSS遮罩模拟） */
         .pet-wrapper.dragging .hedgehog-img {
-            transform: scale(1.08);
-            filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+            filter: drop-shadow(0 12px 28px rgba(0,0,0,0.35)) brightness(0.95);
         }
 
         /* ================================================================
            消息气泡
         ================================================================ */
         .pet-bubble {
-            background: rgba(30, 30, 45, 0.95);
+            background: rgba(30, 30, 45, 0.94);
             color: #fff;
-            padding: 10px 16px;
-            border-radius: 18px 18px 4px 18px;
-            font-size: 14px;
+            padding: 9px 15px;
+            border-radius: 16px 16px 4px 16px;
+            font-size: 13px;
             font-weight: 500;
             line-height: 1.4;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-            max-width: 220px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+            max-width: 200px;
             opacity: 0;
-            transform: translateY(10px) scale(0.85);
-            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            transform: translateY(8px) scale(0.88);
+            transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
             pointer-events: none;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255,255,255,0.1);
             position: relative;
             white-space: nowrap;
             z-index: 10;
         }
-
         .pet-bubble.show {
             opacity: 1;
             transform: translateY(0) scale(1);
         }
-
         .pet-bubble::after {
             content: '';
             position: absolute;
-            bottom: -6px;
-            right: 24px;
-            width: 12px;
-            height: 12px;
-            background: rgba(30, 30, 45, 0.95);
+            bottom: -5px; right: 20px;
+            width: 10px; height: 10px;
+            background: rgba(30, 30, 45, 0.94);
             transform: rotate(45deg);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0 0 3px 0;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0 0 2px 0;
         }
 
         /* ================================================================
-           宠物图片容器
+           宠物身体 + 浮动动画
         ================================================================ */
         .pet-body {
             position: relative;
-            width: 120px;
-            height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 120px; height: 120px;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.15s ease-out;
         }
 
+        /* 呼吸浮动 */
+        .pet-body.idle-float {
+            animation: idleFloat 2.6s ease-in-out infinite;
+        }
+        @keyframes idleFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25%      { transform: translateY(-3px) rotate(-0.8deg); }
+            75%      { transform: translateY(-3px) rotate(0.8deg); }
+        }
+
+        /* 光晕 */
         .pet-body::before {
             content: '';
-            position: absolute;
-            inset: -16px;
+            position: absolute; inset: -14px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(88, 166, 255, 0.25) 0%, transparent 70%);
-            animation: pulse 3s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 0;
+            background: radial-gradient(circle, rgba(88,166,255,0.22) 0%, transparent 70%);
+            animation: pulseGlow 3s ease-in-out infinite;
+            pointer-events: none; z-index: 0;
         }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-                opacity: 0.5;
-            }
-            50% {
-                transform: scale(1.15);
-                opacity: 0.25;
-            }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50%      { transform: scale(1.12); opacity: 0.22; }
         }
 
         .hedgehog-img {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             object-fit: contain;
-            animation: idle-float 3s ease-in-out infinite;
-            filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.25));
-            position: relative;
-            z-index: 1;
+            filter: drop-shadow(0 5px 14px rgba(0,0,0,0.22));
+            position: relative; z-index: 1;
             pointer-events: none;
             transition: transform 0.2s ease-out, filter 0.2s ease-out;
         }
 
-        @keyframes idle-float {
-            0%, 100% {
-                transform: translateY(0) rotate(0deg);
-            }
-            25% {
-                transform: translateY(-4px) rotate(-1deg);
-            }
-            75% {
-                transform: translateY(-4px) rotate(1deg);
-            }
+        /* 挤压动画 */
+        .pet-wrapper.squash .hedgehog-img {
+            animation: squashAnim 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-
-        .pet-wrapper.clicked .hedgehog-img {
-            animation: squash 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes squash {
-            0% { transform: scale(1, 1); }
-            30% { transform: scale(1.2, 0.8); }
-            60% { transform: scale(0.9, 1.15); }
+        @keyframes squashAnim {
+            0%   { transform: scale(1, 1); }
+            30%  { transform: scale(1.18, 0.82); }
+            60%  { transform: scale(0.92, 1.12); }
             100% { transform: scale(1, 1); }
         }
 
-        /* 睡觉状态（慢速呼吸 + 轻微摇晃） */
-        .pet-wrapper.sleeping .hedgehog-img {
-            animation: sleep-breath 4s ease-in-out infinite;
+        /* 旋转动画 */
+        .pet-wrapper.spin .hedgehog-img {
+            animation: spinAnim 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes spinAnim {
+            0%   { transform: rotate(0deg) scale(1); }
+            50%  { transform: rotate(180deg) scale(1.05); }
+            100% { transform: rotate(360deg) scale(1); }
         }
 
-        @keyframes sleep-breath {
+        /* 睡觉状态 */
+        .pet-wrapper.sleeping .pet-body {
+            animation: sleepBreath 4s ease-in-out infinite;
+        }
+        @keyframes sleepBreath {
             0%, 100% { transform: scale(1) rotate(-1deg); }
-            50% { transform: scale(1.04) translateY(-2px) rotate(1deg); }
+            50%      { transform: scale(1.03) translateY(-2px) rotate(1.5deg); }
         }
 
         /* ================================================================
-           睡觉时飘出的 Zzz
+           💤 飘出
         ================================================================ */
         .sleep-zzz {
             position: absolute;
-            top: 0;
-            right: -10px;
-            font-size: 20px;
-            font-weight: bold;
-            color: rgba(88, 166, 255, 0.9);
-            pointer-events: none;
+            top: -10px; right: -14px;
+            font-size: 18px;
             opacity: 0;
-            text-shadow: 0 2px 8px rgba(88, 166, 255, 0.5);
+            pointer-events: none;
             z-index: 2;
         }
-
         .pet-wrapper.sleeping .sleep-zzz {
-            animation: zzz-float 3s ease-in-out infinite;
+            animation: zzzFloat 2.4s ease-out infinite;
         }
-
-        @keyframes zzz-float {
-            0% {
-                opacity: 0;
-                transform: translate(0, 0) scale(0.6);
-            }
-            20% {
-                opacity: 1;
-                transform: translate(-5px, -10px) scale(0.9);
-            }
-            50% {
-                opacity: 0.8;
-                transform: translate(-12px, -25px) scale(1.1);
-            }
-            80% {
-                opacity: 0.3;
-                transform: translate(-18px, -40px) scale(1.2);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-25px, -55px) scale(1.3);
-            }
+        @keyframes zzzFloat {
+            0%   { opacity: 0; transform: translate(0, 0) scale(0.5); }
+            20%  { opacity: 1; transform: translate(-4px, -8px) scale(0.9); }
+            60%  { opacity: 0.7; transform: translate(-14px, -28px) scale(1.1); }
+            100% { opacity: 0; transform: translate(-24px, -50px) scale(1.25); }
         }
 
         /* ================================================================
-           悬浮工具栏
+           悬浮工具栏（悬停出现）
         ================================================================ */
         .pet-toolbar {
-            display: flex;
-            gap: 4px;
-            background: rgba(30, 30, 45, 0.9);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 4px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            display: flex; gap: 3px;
+            background: rgba(30, 30, 45, 0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            padding: 4px; border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
             opacity: 0;
-            transform: translateX(-50%) translateY(8px);
-            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            transform: translateY(8px) scale(0.9);
+            transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
             pointer-events: none;
             position: absolute;
-            top: -44px;
-            left: 50%;
+            top: -46px; left: 50%;
+            transform-origin: bottom center;
+            margin-left: -72px;
+            width: 144px;
+            justify-content: center;
         }
-
         .pet-wrapper:hover .pet-toolbar,
         .pet-wrapper.show-toolbar .pet-toolbar {
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            transform: translateY(0) scale(1);
             pointer-events: auto;
         }
 
         .toolbar-btn {
-            width: 28px;
-            height: 28px;
+            width: 28px; height: 28px;
             border-radius: 50%;
             border: none;
             background: transparent;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255,255,255,0.75);
             cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
+            font-size: 13px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.18s;
             -webkit-tap-highlight-color: transparent;
         }
-
         .toolbar-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255,255,255,0.16);
             color: #fff;
-            transform: scale(1.15);
+            transform: scale(1.18);
         }
-
-        .toolbar-btn:active {
-            transform: scale(0.9);
-        }
+        .toolbar-btn:active { transform: scale(0.88); }
 
         /* ================================================================
-           粒子特效层
+           粒子层
         ================================================================ */
         .pet-particles {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
             z-index: 99998;
+            overflow: hidden;
         }
-
         .particle {
             position: absolute;
-            font-size: 20px;
+            font-size: 18px;
             pointer-events: none;
-            animation: particleFly 1.2s ease-out forwards;
+            animation: particleFly 1.1s ease-out forwards;
             will-change: transform, opacity;
         }
-
         @keyframes particleFly {
-            0% {
-                opacity: 1;
-                transform: translate(0, 0) scale(0.5);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(var(--rot));
-            }
+            0%   { opacity: 1; transform: translate(0,0) scale(0.5); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.15) rotate(var(--rot)); }
         }
 
         /* ================================================================
-           移动端适配
+           右键菜单
+        ================================================================ */
+        .pet-menu {
+            position: fixed;
+            background: rgba(28, 28, 42, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 5px;
+            box-shadow: 0 10px 32px rgba(0,0,0,0.35);
+            z-index: 100000;
+            display: none;
+            min-width: 130px;
+            animation: menuIn 0.15s ease-out;
+        }
+        .pet-menu.show { display: block; }
+        @keyframes menuIn {
+            from { opacity: 0; transform: scale(0.92) translateY(-4px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .pet-menu-item {
+            padding: 7px 12px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 7px;
+            transition: all 0.15s;
+        }
+        .pet-menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .pet-menu-item.danger:hover {
+            background: rgba(239,68,68,0.2);
+            color: #ef4444;
+        }
+        .pet-menu-sep {
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+            margin: 4px 8px;
+        }
+
+        /* ================================================================
+           隐藏状态
+        ================================================================ */
+        .pet-wrapper.hidden {
+            display: none;
+        }
+
+        /* ================================================================
+           移动端
         ================================================================ */
         @media (max-width: 600px) {
-            .pet-wrapper {
-                bottom: 16px;
-                right: 16px;
-            }
-            .pet-body {
-                width: 90px;
-                height: 90px;
-            }
-            .pet-bubble {
-                font-size: 13px;
-                padding: 8px 14px;
-                max-width: 180px;
-            }
-            .pet-toolbar {
-                top: -40px;
-            }
+            .pet-body { width: 88px; height: 88px; }
+            .pet-bubble { font-size: 12px; padding: 7px 12px; max-width: 170px; }
+            .pet-toolbar { top: -42px; margin-left: -64px; width: 128px; }
+            .toolbar-btn { width: 25px; height: 25px; font-size: 12px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .hedgehog-img,
-            .pet-body::before {
-                animation: none;
-            }
+            .pet-body, .hedgehog-img, .pet-body::before { animation: none !important; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== 粒子层 ===== -->
+    <!-- 粒子层 -->
     <div class="pet-particles" id="petParticles"></div>
 
-    <!-- ===== 宠物容器 ===== -->
+    <!-- 右键菜单 -->
+    <div class="pet-menu" id="petMenu">
+        <div class="pet-menu-item" data-menu="love">❤️ 摸摸头</div>
+        <div class="pet-menu-item" data-menu="food">🍎 喂食</div>
+        <div class="pet-menu-item" data-menu="sleep">💤 哄睡</div>
+        <div class="pet-menu-sep"></div>
+        <div class="pet-menu-item" data-menu="spin">🔄 转圈圈</div>
+        <div class="pet-menu-item" data-menu="reset">🏠 归位</div>
+        <div class="pet-menu-sep"></div>
+        <div class="pet-menu-item danger" data-menu="hide">🙈 隐藏</div>
+    </div>
+
+    <!-- 宠物容器 -->
     <div class="pet-wrapper" id="petWrapper">
-        <!-- 气泡 -->
         <div class="pet-bubble" id="petBubble"></div>
 
-        <!-- 悬浮工具栏 -->
         <div class="pet-toolbar" id="petToolbar">
             <button class="toolbar-btn" data-action="love" title="摸摸头">❤️</button>
             <button class="toolbar-btn" data-action="food" title="喂食">🍎</button>
             <button class="toolbar-btn" data-action="sleep" title="哄睡">💤</button>
+            <button class="toolbar-btn" data-action="spin" title="转圈">🔄</button>
             <button class="toolbar-btn" data-action="reset" title="归位">🏠</button>
         </div>
 
-        <!-- 宠物本体 -->
         <div class="pet-body" id="petBody">
             <img class="hedgehog-img" id="hedgehogImg" src="idle-1.png" alt="小刺猬">
-            <!-- 睡觉时飘出的 Zzz -->
             <div class="sleep-zzz">💤</div>
         </div>
     </div>
 
     <script>
-        // ================================================================
-        // 检测是否独立打开（非 iframe 嵌入）
-        // ================================================================
-        if (window.self === window.top) {
-            document.body.classList.add('standalone');
+    // ================================================================
+    // 独立打开检测
+    // ================================================================
+    if (window.self === window.top) {
+        document.body.classList.add('standalone');
+    }
+
+    // ================================================================
+    // 配置
+    // ================================================================
+    const IMAGES = {
+        idle1: 'idle-1.png', idle2: 'idle-2.png',
+        blink: 'blink.png', surprised: 'surprised.png',
+        happy: 'happy.png', angry: 'angry.png',
+        sleep: 'sleep.png'
+    };
+
+    const MSG = {
+        click1: ['你戳我干什么？', '干嘛呀～', '有事吗？'],
+        click2: ['又戳？', '别闹～', '住手！'],
+        click3: ['别戳了！', '再戳我就跑了！', '哼！'],
+        click5: ['喂！我生气了！', '小心我咬你！', '💢'],
+        click8: ['行吧你赢了……', '求你了放过我吧 🥺', '我认输……'],
+        idle: ['今天天气不错～', '写代码好累啊', '有人在吗？',
+               '我又饿了', '☕ 来杯咖啡', '记得按时吃饭',
+               '熬夜对身体不好哦', '🦔 刺猬永不认输'],
+        pet: ['嘿嘿～好开心！', '咕噜咕噜~', '再摸摸嘛～'],
+        food: ['🍎 好吃！谢谢～', '吧唧吧唧…', '还要还要！'],
+        sleep: ['晚安～', '好困……我先睡一会儿', '呼呼呼……'],
+        wake: ['唔……醒啦！', '谁呀…好困…', '呼啊——'],
+        spin: ['转圈圈～', '晕了晕了…', '🔄 看我表演！']
+    };
+
+    // ================================================================
+    // DOM
+    // ================================================================
+    const wrapper = document.getElementById('petWrapper');
+    const petBody = document.getElementById('petBody');
+    const img = document.getElementById('hedgehogImg');
+    const bubble = document.getElementById('petBubble');
+    const toolbar = document.getElementById('petToolbar');
+    const particlesLayer = document.getElementById('petParticles');
+    const menu = document.getElementById('petMenu');
+
+    // ================================================================
+    // 状态
+    // ================================================================
+    let clickCount = 0;
+    let currentState = 'idle1';
+    let isSleeping = false;
+    let isHidden = false;
+    let lastInteraction = Date.now();
+    let bubbleTimer = null;
+    let resetTimer = null;
+    let isDragging = false;
+    let hasMoved = false;
+    let dragStartX = 0, dragStartY = 0;
+    let wrapperStartX = 0, wrapperStartY = 0;
+    let velocityX = 0, velocityY = 0;
+    let lastMoveX = 0, lastMoveY = 0, lastMoveTime = 0;
+    let idleActionTimer = null;
+    let zzzTimer = null;
+    let avoidTimer = null;
+    let isAvoiding = false;
+    let avoidCooldown = 0;
+
+    const KEYS = {
+        pos: 'ciwei_pet_position',
+        sleeping: 'ciwei_pet_sleeping',
+        last: 'ciwei_pet_last_interaction',
+        clicks: 'ciwei_pet_click_count',
+        hidden: 'ciwei_pet_hidden'
+    };
+
+    // ================================================================
+    // 工具
+    // ================================================================
+    function rand(a, b) { return a + Math.random() * (b - a); }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
+    function isMobile() { return window.matchMedia('(max-width: 600px)').matches; }
+    function getSize() { return isMobile() ? 88 : 120; }
+
+    // ================================================================
+    // 图片
+    // ================================================================
+    function setImage(name) {
+        if (!IMAGES[name]) return;
+        currentState = name;
+        img.src = IMAGES[name];
+    }
+
+    // ================================================================
+    // 气泡
+    // ================================================================
+    function showBubble(text, duration) {
+        duration = duration || 2600;
+        bubble.textContent = text;
+        bubble.classList.add('show');
+        clearTimeout(bubbleTimer);
+        bubbleTimer = setTimeout(() => bubble.classList.remove('show'), duration);
+    }
+
+    // ================================================================
+    // 粒子
+    // ================================================================
+    function createParticles(emoji, count) {
+        count = count || 4;
+        const rect = petBody.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.textContent = emoji;
+            p.style.left = (cx - 10) + 'px';
+            p.style.top = (cy - 10) + 'px';
+
+            const angle = rand(0, Math.PI * 2);
+            const dist = rand(35, 75);
+            p.style.setProperty('--dx', (Math.cos(angle) * dist).toFixed(0) + 'px');
+            p.style.setProperty('--dy', (Math.sin(angle) * dist - 25).toFixed(0) + 'px');
+            p.style.setProperty('--rot', rand(-40, 40).toFixed(0) + 'deg');
+            p.style.fontSize = rand(13, 20).toFixed(0) + 'px';
+            p.style.animationDelay = rand(0, 0.12).toFixed(2) + 's';
+
+            particlesLayer.appendChild(p);
+            setTimeout(() => p.remove(), 1300);
         }
+    }
 
-        // ================================================================
-        // 配置：图片全在根目录
-        // ================================================================
-        const IMAGES = {
-            idle1: 'idle-1.png',
-            idle2: 'idle-2.png',
-            blink: 'blink.png',
-            surprised: 'surprised.png',
-            happy: 'happy.png',
-            angry: 'angry.png',
-            sleep: 'sleep.png'
-        };
+    // ================================================================
+    // 持久化
+    // ================================================================
+    function savePosition() {
+        const r = wrapper.getBoundingClientRect();
+        lsSet(KEYS.pos, JSON.stringify({
+            x: Math.round(r.left), y: Math.round(r.top)
+        }));
+    }
+    function saveLast() {
+        lastInteraction = Date.now();
+        lsSet(KEYS.last, String(lastInteraction));
+    }
+    function saveSleeping() {
+        lsSet(KEYS.sleeping, isSleeping ? 'true' : 'false');
+    }
+    function saveClicks() {
+        lsSet(KEYS.clicks, String(clickCount));
+    }
+    function saveHidden() {
+        lsSet(KEYS.hidden, isHidden ? 'true' : 'false');
+    }
 
-        // 点击次数对应的消息
-        const CLICK_MESSAGES = {
-            1: '你戳我干什么？',
-            3: '别戳了！',
-            5: '再戳我就跑了！',
-            8: '喂！我生气了！',
-            10: '行吧你赢了……',
-            15: '求你了放过我吧 🥺'
-        };
+    // ================================================================
+    // 位置约束
+    // ================================================================
+    function clampPosition() {
+        const w = wrapper.offsetWidth || getSize();
+        const h = wrapper.offsetHeight || getSize();
+        const r = wrapper.getBoundingClientRect();
+        let x = r.left, y = r.top;
 
-        // 其他次数的随机消息
-        const RANDOM_MESSAGES = [
-            '干嘛呀～', '有事吗？', '我在忙……', '嗯？', '别闹～',
-            '你戳到我的刺了！', '哈哈，痒！', '住手！', '小心我咬你！',
-            '我在睡觉呢……', '呼噜呼噜……', '咦？你是谁呀？',
-            '👀', '唔……', '又来了……', '好无聊啊', '摸摸头？'
-        ];
+        const maxX = window.innerWidth - w;
+        const maxY = window.innerHeight - h;
 
-        // 空闲时随机说的话
-        const IDLE_MESSAGES = [
-            '今天天气不错～', '写代码好累啊', '有人在吗？',
-            '我又饿了', '☕ 来杯咖啡', '你的博客真好看',
-            '记得按时吃饭', '熬夜对身体不好哦', '好困……',
-            '🦔 刺猬永不认输', '要不要一起摸鱼？'
-        ];
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+        if (x > maxX) x = maxX;
+        if (y > maxY) y = maxY;
 
-        // 睡觉时说的话
-        const SLEEP_MESSAGES = [
-            '呼呼呼……', 'Zzz……', '别吵……我在做梦……',
-            '梦里也有小鱼干'
-        ];
+        wrapper.style.left = x + 'px';
+        wrapper.style.top = y + 'px';
+    }
 
-        // ================================================================
-        // DOM 引用
-        // ================================================================
-        const wrapper = document.getElementById('petWrapper');
-        const petBody = document.getElementById('petBody');
-        const img = document.getElementById('hedgehogImg');
-        const bubble = document.getElementById('petBubble');
-        const toolbar = document.getElementById('petToolbar');
-        const particlesLayer = document.getElementById('petParticles');
+    function placeAt(x, y) {
+        wrapper.style.left = x + 'px';
+        wrapper.style.top = y + 'px';
+    }
 
-        // ================================================================
-        // 状态
-        // ================================================================
-        let clickCount = 0;
-        let currentState = 'idle1';
-        let isSleeping = false;
-        let lastInteraction = Date.now();
-        let bubbleTimer = null;
-        let resetTimer = null;
-        let isDragging = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let wrapperStartX = 0;
-        let wrapperStartY = 0;
-        let hasMoved = false;
-
-        const POSITION_KEY = 'ciwei_pet_position';
-
-        // ================================================================
-        // 预加载图片
-        // ================================================================
-        function preloadImages() {
-            Object.values(IMAGES).forEach(src => {
-                const image = new Image();
-                image.src = src;
-            });
+    // ================================================================
+    // 待机循环
+    // ================================================================
+    // 呼吸切换
+    setInterval(() => {
+        if (isSleeping || isHidden) return;
+        if (currentState === 'idle1' || currentState === 'idle2') {
+            setImage(currentState === 'idle1' ? 'idle2' : 'idle1');
         }
+    }, 1000);
 
-        // ================================================================
-        // 图片切换
-        // ================================================================
-        function setImage(stateName) {
-            if (!IMAGES[stateName]) return;
-            currentState = stateName;
-            img.src = IMAGES[stateName];
-        }
-
-        // ================================================================
-        // 气泡
-        // ================================================================
-        function showBubble(message, duration = 3000) {
-            bubble.textContent = message;
-            bubble.classList.add('show');
-            clearTimeout(bubbleTimer);
-            bubbleTimer = setTimeout(() => {
-                bubble.classList.remove('show');
-            }, duration);
-        }
-
-        function randomMessage(list) {
-            return list[Math.floor(Math.random() * list.length)];
-        }
-
-        // ================================================================
-        // 粒子特效
-        // ================================================================
-        function createParticles(emoji, count = 5) {
-            const rect = petBody.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-
-            for (let i = 0; i < count; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.textContent = emoji;
-                particle.style.left = (centerX - 10) + 'px';
-                particle.style.top = (centerY - 10) + 'px';
-
-                const angle = (Math.random() * 360) * Math.PI / 180;
-                const distance = 40 + Math.random() * 40;
-                const dx = Math.cos(angle) * distance;
-                const dy = Math.sin(angle) * distance;
-                const rot = (Math.random() - 0.5) * 90;
-
-                particle.style.setProperty('--dx', dx + 'px');
-                particle.style.setProperty('--dy', dy + 'px');
-                particle.style.setProperty('--rot', rot + 'deg');
-                particle.style.animationDelay = (Math.random() * 0.15) + 's';
-
-                particlesLayer.appendChild(particle);
-                setTimeout(() => particle.remove(), 1500);
+    // 随机眨眼
+    (function blinkLoop() {
+        setTimeout(() => {
+            if (!isSleeping && !isHidden && (currentState === 'idle1' || currentState === 'idle2')) {
+                const prev = currentState;
+                setImage('blink');
+                setTimeout(() => {
+                    if (currentState === 'blink') setImage(prev);
+                }, 280);
             }
-        }
+            blinkLoop();
+        }, rand(3000, 7000));
+    })();
 
-        // ================================================================
-        // 待机呼吸动画
-        // ================================================================
-        setInterval(() => {
-            if (isSleeping) return;
-            if (currentState === 'idle1' || currentState === 'idle2') {
-                setImage(currentState === 'idle1' ? 'idle2' : 'idle1');
-            }
-        }, 1000);
-
-        // ================================================================
-        // 随机眨眼
-        // ================================================================
-        function scheduleBlink() {
-            const delay = 3000 + Math.random() * 5000;
-            setTimeout(() => {
-                if (!isSleeping && (currentState === 'idle1' || currentState === 'idle2')) {
-                    const prevState = currentState;
-                    setImage('blink');
-                    setTimeout(() => {
-                        if (currentState === 'blink') {
-                            setImage(prevState);
-                        }
-                    }, 300);
-                }
-                scheduleBlink();
-            }, delay);
-        }
-        scheduleBlink();
-
-        // ================================================================
-        // 点击处理
-        // ================================================================
-        function handleClick() {
-            if (isDragging) return;
-
-            lastInteraction = Date.now();
-
-            // 睡觉时点击唤醒
-            if (isSleeping) {
-                isSleeping = false;
-                wrapper.classList.remove('sleeping');
-                setImage('idle1');
-                showBubble('唔……醒啦！');
-                createParticles('✨', 4);
+    // 空闲小动作
+    function scheduleIdleAction() {
+        clearTimeout(idleActionTimer);
+        idleActionTimer = setTimeout(() => {
+            if (isSleeping || isHidden || Date.now() - lastInteraction < 15000) {
+                scheduleIdleAction();
                 return;
             }
 
-            clickCount++;
+            const roll = Math.random();
 
-            let message = '';
-            let newImg = 'happy';
-
-            if (CLICK_MESSAGES[clickCount]) {
-                message = CLICK_MESSAGES[clickCount];
-            } else if (clickCount > 15) {
-                message = `你戳了 ${clickCount} 次了，累不累？`;
-            } else {
-                message = randomMessage(RANDOM_MESSAGES);
+            if (roll < 0.25) {
+                // 张望（用blink模拟）
+                setImage('surprised');
+                setTimeout(() => { if (!isSleeping && currentState === 'surprised') setImage('idle1'); }, 800);
+            } else if (roll < 0.5) {
+                // 吐泡泡
+                createParticles('💭', 2);
+            } else if (roll < 0.7) {
+                // 说话
+                showBubble(pick(MSG.idle));
+            } else if (roll < 0.85) {
+                // 自动睡觉
+                goSleep();
             }
 
-            if (clickCount >= 8) {
-                newImg = 'angry';
-            } else if (clickCount >= 3) {
-                newImg = 'surprised';
-            } else {
-                newImg = 'happy';
-            }
+            scheduleIdleAction();
+        }, rand(20000, 45000));
+    }
 
-            setImage(newImg);
-            showBubble(message);
-            wrapper.classList.add('clicked');
+    // ================================================================
+    // 睡觉
+    // ================================================================
+    function startZzz() {
+        clearInterval(zzzTimer);
+        zzzTimer = setInterval(() => {
+            if (!isSleeping || isHidden) return;
+            const r = petBody.getBoundingClientRect();
+            const z = document.createElement('div');
+            z.className = 'particle';
+            z.textContent = '💤';
+            z.style.left = (r.right - 12) + 'px';
+            z.style.top = (r.top - 4) + 'px';
+            z.style.setProperty('--dx', rand(10, 28).toFixed(0) + 'px');
+            z.style.setProperty('--dy', '-55px');
+            z.style.setProperty('--rot', '0deg');
+            z.style.fontSize = '14px';
+            z.style.animationDuration = '2s';
+            particlesLayer.appendChild(z);
+            setTimeout(() => z.remove(), 2200);
+        }, 2200);
+    }
 
-            if (clickCount >= 8) {
-                createParticles('💢', 3);
-            } else {
-                createParticles('✨', 3);
-            }
+    function stopZzz() {
+        clearInterval(zzzTimer);
+        zzzTimer = null;
+    }
 
-            setTimeout(() => {
-                wrapper.classList.remove('clicked');
-            }, 400);
+    function goSleep() {
+        if (isSleeping) return;
+        isSleeping = true;
+        saveSleeping();
+        saveLast();
+        wrapper.classList.add('sleeping');
+        setImage('sleep');
+        showBubble(pick(MSG.sleep), 2200);
+        startZzz();
+    }
 
-            clearTimeout(resetTimer);
-            resetTimer = setTimeout(() => {
-                if (!isSleeping) {
-                    setImage('idle1');
-                }
-                clickCount = 0;
-            }, 1500);
+    function wakeUp() {
+        if (!isSleeping) return;
+        isSleeping = false;
+        saveSleeping();
+        saveLast();
+        wrapper.classList.remove('sleeping');
+        stopZzz();
+        setImage('surprised');
+        showBubble(pick(MSG.wake));
+        createParticles('✨', 3);
+        setTimeout(() => {
+            if (!isSleeping && currentState === 'surprised') setImage('idle1');
+        }, 1200);
+    }
+
+    // ================================================================
+    // 点击
+    // ================================================================
+    function handleClick() {
+        if (isDragging) return;
+
+        saveLast();
+
+        if (isSleeping) { wakeUp(); return; }
+
+        // 5分钟没点则归零
+        if (Date.now() - lastInteraction > 5 * 60 * 1000) clickCount = 0;
+
+        clickCount++;
+        saveClicks();
+
+        let msg = '';
+        let face = 'happy';
+
+        if (clickCount === 1)      { msg = pick(MSG.click1); face = 'happy'; }
+        else if (clickCount === 2) { msg = pick(MSG.click2); face = 'happy'; }
+        else if (clickCount === 3) { msg = pick(MSG.click3); face = 'surprised'; }
+        else if (clickCount === 5) { msg = pick(MSG.click5); face = 'surprised'; }
+        else if (clickCount >= 8)  { msg = pick(MSG.click8); face = 'angry'; }
+        else { msg = pick(MSG.idle); face = 'happy'; }
+
+        if (clickCount > 15) msg = '你戳了 ' + clickCount + ' 次了，累不累？';
+
+        setImage(face);
+        showBubble(msg);
+        wrapper.classList.add('squash');
+        setTimeout(() => wrapper.classList.remove('squash'), 420);
+
+        createParticles(face === 'angry' ? '💢' : '✨', face === 'angry' ? 3 : 4);
+
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => {
+            if (!isSleeping) setImage('idle1');
+            clickCount = 0;
+            saveClicks();
+        }, 4000);
+
+        // 移动端点击后弹出工具栏
+        if (isMobile()) {
+            wrapper.classList.add('show-toolbar');
+            setTimeout(() => wrapper.classList.remove('show-toolbar'), 2600);
+        }
+    }
+
+    // ================================================================
+    // 拖拽（含惯性）
+    // ================================================================
+    function onDown(e) {
+        if (e.target.closest('.pet-toolbar') || e.target.closest('.pet-menu')) return;
+        if (e.button && e.button !== 0) return;
+
+        isDragging = true;
+        hasMoved = false;
+        wrapper.classList.add('dragging');
+        wrapper.classList.remove('idle-float');
+
+        const point = e.touches ? e.touches[0] : e;
+        dragStartX = point.clientX;
+        dragStartY = point.clientY;
+
+        const r = wrapper.getBoundingClientRect();
+        wrapperStartX = r.left;
+        wrapperStartY = r.top;
+
+        velocityX = 0; velocityY = 0;
+        lastMoveX = point.clientX; lastMoveY = point.clientY;
+        lastMoveTime = Date.now();
+
+        e.preventDefault();
+    }
+
+    function onMove(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        const point = e.touches ? e.touches[0] : e;
+        const dx = point.clientX - dragStartX;
+        const dy = point.clientY - dragStartY;
+
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) hasMoved = true;
+
+        let nx = wrapperStartX + dx;
+        let ny = wrapperStartY + dy;
+
+        // 边界约束
+        const w = wrapper.offsetWidth || getSize();
+        const h = wrapper.offsetHeight || getSize();
+        nx = Math.max(0, Math.min(nx, window.innerWidth - w));
+        ny = Math.max(0, Math.min(ny, window.innerHeight - h));
+
+        placeAt(nx, ny);
+
+        // 计算速度
+        const now = Date.now();
+        const dt = now - lastMoveTime;
+        if (dt > 0) {
+            velocityX = (point.clientX - lastMoveX) / dt * 16;
+            velocityY = (point.clientY - lastMoveY) / dt * 16;
+        }
+        lastMoveX = point.clientX; lastMoveY = point.clientY;
+        lastMoveTime = now;
+    }
+
+    function onUp(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        wrapper.classList.remove('dragging');
+        wrapper.classList.add('idle-float');
+
+        if (!hasMoved) {
+            handleClick();
+            return;
         }
 
-        // ================================================================
-        // 拖拽
-        // ================================================================
-        function handleDragStart(e) {
-            if (e.target.closest('.pet-toolbar')) return;
+        savePosition();
+        saveLast();
 
-            isDragging = true;
-            hasMoved = false;
-            wrapper.classList.add('dragging');
+        // 惯性滑动
+        let vx = velocityX;
+        let vy = velocityY;
+        const decay = 0.92;
 
-            const point = e.touches ? e.touches[0] : e;
-            dragStartX = point.clientX;
-            dragStartY = point.clientY;
-
-            const rect = wrapper.getBoundingClientRect();
-            wrapperStartX = rect.left;
-            wrapperStartY = rect.top;
-
-            wrapper.style.left = wrapperStartX + 'px';
-            wrapper.style.top = wrapperStartY + 'px';
-            wrapper.style.right = 'auto';
-            wrapper.style.bottom = 'auto';
-        }
-
-        function handleDragMove(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-
-            const point = e.touches ? e.touches[0] : e;
-            const dx = point.clientX - dragStartX;
-            const dy = point.clientY - dragStartY;
-
-            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-                hasMoved = true;
-            }
-
-            wrapper.style.left = (wrapperStartX + dx) + 'px';
-            wrapper.style.top = (wrapperStartY + dy) + 'px';
-        }
-
-        function handleDragEnd(e) {
-            if (!isDragging) return;
-            isDragging = false;
-            wrapper.classList.remove('dragging');
-
-            if (!hasMoved) {
-                handleClick();
+        function slide() {
+            if (Math.abs(vx) < 0.5 && Math.abs(vy) < 0.5) {
+                clampPosition();
+                savePosition();
                 return;
             }
 
-            const rect = wrapper.getBoundingClientRect();
-            const maxX = window.innerWidth - rect.width;
-            const maxY = window.innerHeight - rect.height;
-            let finalX = Math.max(0, Math.min(rect.left, maxX));
-            let finalY = Math.max(0, Math.min(rect.top, maxY));
+            vx *= decay;
+            vy *= decay;
 
-            wrapper.style.left = finalX + 'px';
-            wrapper.style.top = finalY + 'px';
+            const r = wrapper.getBoundingClientRect();
+            const w = wrapper.offsetWidth || getSize();
+            const h = wrapper.offsetHeight || getSize();
 
-            try {
-                localStorage.setItem(POSITION_KEY, JSON.stringify({
-                    x: finalX,
-                    y: finalY,
-                    isLeftTop: true
-                }));
-            } catch (err) {}
+            let nx = r.left + vx;
+            let ny = r.top + vy;
+
+            let hitEdge = false;
+            if (nx < 0) { nx = 0; vx = -vx * 0.5; hitEdge = true; }
+            if (ny < 0) { ny = 0; vy = -vy * 0.5; hitEdge = true; }
+            if (nx > window.innerWidth - w) { nx = window.innerWidth - w; vx = -vx * 0.5; hitEdge = true; }
+            if (ny > window.innerHeight - h) { ny = window.innerHeight - h; vy = -vy * 0.5; hitEdge = true; }
+
+            placeAt(nx, ny);
+
+            if (hitEdge) {
+                // 撞墙轻微挤压
+                wrapper.classList.add('squash');
+                setTimeout(() => wrapper.classList.remove('squash'), 300);
+            }
+
+            requestAnimationFrame(slide);
         }
+        requestAnimationFrame(slide);
+    }
 
-        wrapper.addEventListener('mousedown', handleDragStart);
-        document.addEventListener('mousemove', handleDragMove);
-        document.addEventListener('mouseup', handleDragEnd);
+    wrapper.addEventListener('mousedown', onDown);
+    document.addEventListener('mousemove', onMove, { passive: false });
+    document.addEventListener('mouseup', onUp);
 
-        wrapper.addEventListener('touchstart', handleDragStart, { passive: true });
-        document.addEventListener('touchmove', handleDragMove, { passive: false });
-        document.addEventListener('touchend', handleDragEnd);
+    wrapper.addEventListener('touchstart', onDown, { passive: false });
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
 
-        img.addEventListener('dragstart', e => e.preventDefault());
+    img.addEventListener('dragstart', e => e.preventDefault());
 
-        // ================================================================
-        // 工具栏
-        // ================================================================
-        toolbar.addEventListener('click', function(e) {
-            const btn = e.target.closest('.toolbar-btn');
-            if (!btn) return;
+    // 双击转圈
+    let lastTapTime = 0;
+    wrapper.addEventListener('click', function(e) {
+        if (hasMoved) return;
+        const now = Date.now();
+        if (now - lastTapTime < 300) {
             e.stopPropagation();
-
-            const action = btn.dataset.action;
-            lastInteraction = Date.now();
-
-            switch (action) {
-                case 'love':
-                    setImage('happy');
-                    showBubble('嘿嘿～好开心！');
-                    createParticles('❤️', 6);
-                    setTimeout(() => {
-                        if (!isSleeping) setImage('idle1');
-                    }, 1500);
-                    break;
-
-                case 'food':
-                    setImage('happy');
-                    showBubble('🍎 好吃！谢谢～');
-                    createParticles('🍎', 4);
-                    setTimeout(() => {
-                        if (!isSleeping) setImage('idle1');
-                    }, 1500);
-                    break;
-
-                case 'sleep':
-                    if (isSleeping) {
-                        // 唤醒
-                        isSleeping = false;
-                        wrapper.classList.remove('sleeping');
-                        setImage('idle1');
-                        showBubble('睡醒啦！');
-                        createParticles('✨', 4);
-                    } else {
-                        // 哄睡
-                        isSleeping = true;
-                        wrapper.classList.add('sleeping');
-                        setImage('sleep');
-                        showBubble('晚安～');
-                        createParticles('💤', 3);
-                    }
-                    break;
-
-                case 'reset':
-                    wrapper.style.left = '';
-                    wrapper.style.top = '';
-                    wrapper.style.right = '24px';
-                    wrapper.style.bottom = '24px';
-                    try {
-                        localStorage.removeItem(POSITION_KEY);
-                    } catch (err) {}
-                    showBubble('归位！');
-                    break;
-            }
-        });
-
-        // ================================================================
-        // 空闲说话
-        // ================================================================
-        function scheduleIdleTalk() {
-            const delay = 30000 + Math.random() * 30000;
-            setTimeout(() => {
-                if (Date.now() - lastInteraction > 20000 && !isSleeping) {
-                    if (Math.random() < 0.3) {
-                        // 自动睡觉
-                        isSleeping = true;
-                        wrapper.classList.add('sleeping');
-                        setImage('sleep');
-                        showBubble('好困……我先睡一会儿');
-                        createParticles('💤', 3);
-                    } else {
-                        showBubble(randomMessage(IDLE_MESSAGES));
-                    }
-                }
-                scheduleIdleTalk();
-            }, delay);
+            doSpin();
+            lastTapTime = 0;
+        } else {
+            lastTapTime = now;
         }
-        scheduleIdleTalk();
+    });
 
-        // 睡觉时偶尔说梦话
-        setInterval(() => {
-            if (isSleeping && Math.random() < 0.3) {
-                showBubble(randomMessage(SLEEP_MESSAGES));
-            }
-        }, 15000);
+    // ================================================================
+    // 动作
+    // ================================================================
+    function doPet() {
+        saveLast();
+        if (isSleeping) { wakeUp(); return; }
+        setImage('happy');
+        showBubble(pick(MSG.pet));
+        createParticles('❤️', 5);
+        setTimeout(() => { if (!isSleeping && currentState === 'happy') setImage('idle1'); }, 1600);
+    }
 
-        // ================================================================
-        // 恢复位置
-        // ================================================================
-        function restorePosition() {
-            try {
-                const saved = localStorage.getItem(POSITION_KEY);
-                if (saved) {
-                    const pos = JSON.parse(saved);
-                    if (pos.isLeftTop) {
-                        wrapper.style.left = pos.x + 'px';
-                        wrapper.style.top = pos.y + 'px';
-                        wrapper.style.right = 'auto';
-                        wrapper.style.bottom = 'auto';
-                    }
-                }
-            } catch (err) {}
-        }
+    function doFood() {
+        saveLast();
+        if (isSleeping) wakeUp();
+        setImage('happy');
+        showBubble(pick(MSG.food));
+        createParticles('🍎', 4);
+        setTimeout(() => { if (!isSleeping && currentState === 'happy') setImage('idle1'); }, 1800);
+    }
 
-        // 窗口大小改变时调整位置
-        window.addEventListener('resize', function() {
-            const rect = wrapper.getBoundingClientRect();
-            const maxX = window.innerWidth - rect.width;
-            const maxY = window.innerHeight - rect.height;
-            if (rect.left > maxX) {
-                wrapper.style.left = maxX + 'px';
-            }
-            if (rect.top > maxY) {
-                wrapper.style.top = maxY + 'px';
-            }
-        });
+    function doSleepToggle() {
+        saveLast();
+        if (isSleeping) wakeUp(); else goSleep();
+    }
 
-        // ================================================================
-        // 启动
-        // ================================================================
-        preloadImages();
-        restorePosition();
+    function doSpin() {
+        saveLast();
+        if (isSleeping) wakeUp();
+        wrapper.classList.add('spin');
+        setImage('happy');
+        showBubble(pick(MSG.spin));
+        createParticles('💫', 5);
+        setTimeout(() => wrapper.classList.remove('spin'), 850);
+        setTimeout(() => { if (!isSleeping) setImage('idle1'); }, 1500);
+    }
+
+    function doReset() {
+        saveLast();
+        if (isSleeping) wakeUp();
+
+        const s = getSize();
+        const targetX = window.innerWidth - s - 24;
+        const targetY = window.innerHeight - s - 24;
+
+        wrapper.style.transition = 'left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        placeAt(targetX, targetY);
 
         setTimeout(() => {
-            showBubble('你好呀～我是小刺猬');
-            createParticles('✨', 4);
-        }, 1500);
+            wrapper.style.transition = '';
+            clampPosition();
+            savePosition();
+        }, 480);
 
-        console.log('🦔 小刺猬宠物已启动（含睡觉模式）');
+        showBubble('归位！');
+        createParticles('🏠', 3);
+    }
+
+    function doHide() {
+        isHidden = true;
+        saveHidden();
+        wrapper.classList.add('hidden');
+    }
+
+    function doShow() {
+        isHidden = false;
+        saveHidden();
+        wrapper.classList.remove('hidden');
+    }
+
+    // ================================================================
+    // 工具栏
+    // ================================================================
+    toolbar.addEventListener('click', function(e) {
+        const btn = e.target.closest('.toolbar-btn');
+        if (!btn) return;
+        e.stopPropagation();
+        const act = btn.dataset.action;
+        if (act === 'love') doPet();
+        else if (act === 'food') doFood();
+        else if (act === 'sleep') doSleepToggle();
+        else if (act === 'spin') doSpin();
+        else if (act === 'reset') doReset();
+    });
+
+    toolbar.addEventListener('mouseenter', () => wrapper.classList.add('show-toolbar'));
+    toolbar.addEventListener('mouseleave', () => wrapper.classList.remove('show-toolbar'));
+
+    // ================================================================
+    // 右键菜单
+    // ================================================================
+    wrapper.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        if (isMobile()) return;
+
+        menu.style.left = e.clientX + 'px';
+        menu.style.top = e.clientY + 'px';
+        menu.classList.add('show');
+
+        // 边界调整
+        const mr = menu.getBoundingClientRect();
+        if (mr.right > window.innerWidth) menu.style.left = (window.innerWidth - mr.width - 8) + 'px';
+        if (mr.bottom > window.innerHeight) menu.style.top = (window.innerHeight - mr.height - 8) + 'px';
+    });
+
+    menu.addEventListener('click', function(e) {
+        const item = e.target.closest('[data-menu]');
+        if (!item) return;
+        const act = item.dataset.menu;
+        menu.classList.remove('show');
+
+        if (act === 'love') doPet();
+        else if (act === 'food') doFood();
+        else if (act === 'sleep') doSleepToggle();
+        else if (act === 'spin') doSpin();
+        else if (act === 'reset') doReset();
+        else if (act === 'hide') doHide();
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.pet-menu') && !e.target.closest('#petWrapper')) {
+            menu.classList.remove('show');
+        }
+    });
+
+    // ================================================================
+    // 智能避让（鼠标靠近时让开）
+    // ================================================================
+    document.addEventListener('mousemove', function(e) {
+        if (isMobile() || isDragging || isSleeping || isHidden) return;
+        if (Date.now() < avoidCooldown) return;
+
+        const r = wrapper.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+
+        if (dist < 90) {
+            if (!avoidTimer) {
+                avoidTimer = setTimeout(() => {
+                    if (isDragging || isSleeping) return;
+                    // 向远离鼠标的方向移动
+                    const dx = cx - e.clientX;
+                    const dy = cy - e.clientY;
+                    const len = Math.hypot(dx, dy) || 1;
+                    const moveDist = 50;
+
+                    let nx = r.left + (dx / len) * moveDist;
+                    let ny = r.top + (dy / len) * moveDist;
+
+                    const w = wrapper.offsetWidth || getSize();
+                    const h = wrapper.offsetHeight || getSize();
+                    nx = Math.max(0, Math.min(nx, window.innerWidth - w));
+                    ny = Math.max(0, Math.min(ny, window.innerHeight - h));
+
+                    wrapper.style.transition = 'left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    placeAt(nx, ny);
+                    setTimeout(() => { wrapper.style.transition = ''; savePosition(); }, 520);
+
+                    avoidCooldown = Date.now() + 8000;
+                    avoidTimer = null;
+                }, 900);
+            }
+        } else {
+            clearTimeout(avoidTimer);
+            avoidTimer = null;
+        }
+    });
+
+    // 鼠标追光效果（刺猬轻微倾斜）
+    document.addEventListener('mousemove', function(e) {
+        if (isMobile() || isDragging || isHidden) return;
+        const r = wrapper.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+
+        const dx = (e.clientX - cx) / window.innerWidth;
+        const dy = (e.clientY - cy) / window.innerHeight;
+
+        const tiltX = Math.max(-6, Math.min(6, dy * 12));
+        const tiltY = Math.max(-6, Math.min(6, -dx * 12));
+
+        img.style.transform = `perspective(300px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    });
+
+    document.addEventListener('mouseleave', function() {
+        img.style.transform = '';
+    });
+
+    // ================================================================
+    // 后台省电
+    // ================================================================
+    let wasSleepingBeforeHide = false;
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            savePosition();
+            saveSleeping();
+            saveClicks();
+            lsSet(KEYS.last, String(lastInteraction));
+        }
+    });
+
+    // ================================================================
+    // 恢复状态
+    // ================================================================
+    function restore() {
+        // 位置
+        let saved = null;
+        try { saved = JSON.parse(lsGet(KEYS.pos) || 'null'); } catch(e) {}
+        const s = getSize();
+        if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+            placeAt(saved.x, saved.y);
+        } else {
+            placeAt(window.innerWidth - s - 24, window.innerHeight - s - 24);
+        }
+
+        // 睡觉
+        if (lsGet(KEYS.sleeping) === 'true') {
+            isSleeping = true;
+            wrapper.classList.add('sleeping');
+            setImage('sleep');
+            startZzz();
+        } else {
+            setImage('idle1');
+        }
+
+        // 点击次数
+        clickCount = parseInt(lsGet(KEYS.clicks) || '0', 10) || 0;
+
+        // 上次交互
+        const last = parseInt(lsGet(KEYS.last) || '0', 10);
+        if (last > 0) lastInteraction = last;
+
+        // 隐藏状态
+        if (lsGet(KEYS.hidden) === 'true') {
+            isHidden = true;
+            wrapper.classList.add('hidden');
+        }
+
+        clampPosition();
+    }
+
+    // 窗口变化
+    let resizeTimer = null;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => { clampPosition(); savePosition(); }, 150);
+    });
+
+    // 页面卸载保存
+    window.addEventListener('beforeunload', function() {
+        savePosition();
+        saveSleeping();
+        saveClicks();
+        lsSet(KEYS.last, String(lastInteraction));
+    });
+
+    // ================================================================
+    // 启动
+    // ================================================================
+    // 预加载
+    Object.values(IMAGES).forEach(src => { const i = new Image(); i.src = src; });
+
+    restore();
+    wrapper.classList.add('idle-float');
+    scheduleIdleAction();
+
+    // 首次打招呼（仅在没有睡觉且未隐藏时）
+    setTimeout(() => {
+        if (!isSleeping && !isHidden) {
+            showBubble('你好呀～我是小刺猬 🦔');
+            createParticles('✨', 4);
+        }
+    }, 1200);
+
+    console.log('🦔 CiweiPet 增强版已启动');
+    console.log('✨ 特性：呼吸浮动 · 惯性拖拽 · 智能避让 · 视差倾斜 · 右键菜单 · 双击转圈');
     </script>
 
 </body>
