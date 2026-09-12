@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10,108 +10,91 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="小c">
 <style>
+:root {
+    --cp-size: 120px;
+    --cp-accent: 88, 166, 255;
+    --cp-breath: 2.8s;
+    --cp-glow: 3.2s;
+    --cp-tilt: .5s;
+    --cp-bubble: .26s;
+    --cp-particle: 1.15s;
+    --cp-zzz: 2.6s;
+    /* 浅色模式默认变量 */
+    --bg-body: #f0f2f5;
+    --text-main: #1a1a2e;
+    --text-sub: #555;
+    --panel-bg: rgba(255, 255, 255, 0.92);
+    --panel-border: rgba(0, 0, 0, 0.08);
+    --item-hover: rgba(0, 0, 0, 0.05);
+    --bubble-bg: rgba(255, 255, 255, 0.95);
+    --bubble-text: #1a1a2e;
+    --input-bg: rgba(0, 0, 0, 0.05);
+}
+
+/* 深色模式自动跟随系统 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-body: #0a0a0f;
+        --text-main: #e0e8f5;
+        --text-sub: #888;
+        --panel-bg: rgba(28, 28, 42, 0.97);
+        --panel-border: rgba(255, 255, 255, 0.1);
+        --item-hover: rgba(255, 255, 255, 0.1);
+        --bubble-bg: rgba(30, 30, 45, 0.94);
+        --bubble-text: #fff;
+        --input-bg: rgba(255, 255, 255, 0.08);
+    }
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
     width: 100%; height: 100%;
     overflow: hidden;
-    background: transparent;
+    background: var(--bg-body);
     font-family: -apple-system, 'PingFang SC', 'Segoe UI', 'Inter', sans-serif;
     user-select: none; -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
-}
-body.standalone {
-    background: radial-gradient(circle at 30% 20%, #1a1a2e 0%, #0a0a0f 70%);
+    color: var(--text-main);
 }
 
-:root {
-    --cp-accent: 88, 166, 255;
-    --cp-size: 120px;
-    --cp-breath: 2.8s;
-    --cp-glow: 3.2s;
-    --cp-tilt: .5s;
-    --cp-bubble: .26s;
-    --cp-toolbar: .24s;
-    --cp-particle: 1.15s;
-    --cp-zzz: 2.6s;
-}
 @media (max-width: 600px) { :root { --cp-size: 88px; } }
 
-body[data-fps="high"] {
-    --cp-breath: 2.5s; --cp-glow: 3s; --cp-tilt: .42s;
-}
-body[data-fps="low"] {
-    --cp-breath: 3.4s; --cp-glow: 3.8s; --cp-tilt: .6s; --cp-particle: 1.35s;
-}
+body[data-fps="high"] { --cp-breath: 2.5s; --cp-glow: 3s; --cp-tilt: .42s; }
+body[data-fps="low"] { --cp-breath: 3.4s; --cp-glow: 3.8s; --cp-tilt: .6s; --cp-particle: 1.35s; }
 
 /* ==================== 宠物容器 ==================== */
 #ciwei-pet {
-    position: fixed;
-    left: 0; top: 0;
-    width: var(--cp-size);
-    height: var(--cp-size);
+    position: fixed; left: 0; top: 0;
+    width: var(--cp-size); height: var(--cp-size);
     z-index: 99999;
     transform: translate3d(-9999px, -9999px, 0);
     will-change: transform;
-    cursor: grab;
-    touch-action: none;
+    cursor: grab; touch-action: none;
     opacity: 0;
-    transition: opacity .45s cubic-bezier(.22,1,.36,1),
-                width .35s cubic-bezier(.34,1.56,.64,1),
-                height .35s cubic-bezier(.34,1.56,.64,1);
+    transition: opacity .45s cubic-bezier(.22,1,.36,1), width .35s cubic-bezier(.34,1.56,.64,1), height .35s cubic-bezier(.34,1.56,.64,1);
 }
 #ciwei-pet.ready { opacity: 1; }
 #ciwei-pet.dragging { cursor: grabbing; }
-#ciwei-pet.animating {
-    transition: transform .55s cubic-bezier(.34,1.56,.64,1),
-                opacity .45s,
-                width .35s, height .35s;
-}
+#ciwei-pet.animating { transition: transform .55s cubic-bezier(.34,1.56,.64,1), opacity .45s, width .35s, height .35s; }
 #ciwei-pet.scaling { transition: none; }
 #ciwei-pet.hidden { display: none; }
 
-/* ==================== 身体 ==================== */
-#ciwei-pet .cp-body {
-    position: relative; width: 100%; height: 100%;
-    transition: transform .15s ease-out;
-    transform-style: preserve-3d;
-}
-#ciwei-pet.idle-float .cp-body {
-    animation: cp-idleFloat var(--cp-breath) ease-in-out infinite;
-}
+#ciwei-pet .cp-body { position: relative; width: 100%; height: 100%; transition: transform .15s ease-out; transform-style: preserve-3d; }
+#ciwei-pet.idle-float .cp-body { animation: cp-idleFloat var(--cp-breath) ease-in-out infinite; }
 @keyframes cp-idleFloat {
     0%, 100% { transform: translateY(0) rotate(0); }
     25%      { transform: translateY(-3px) rotate(-.8deg); }
     75%      { transform: translateY(-3px) rotate(.8deg); }
 }
-
-#ciwei-pet .cp-body::before {
-    display: none;
-}
-@keyframes cp-pulseGlow {
-    0%, 100% { transform: scale(1); opacity: .55; }
-    50%      { transform: scale(1.1); opacity: .2; }
-}
-body[data-fps="low"] #ciwei-pet .cp-body::before { animation: none; opacity: .35; }
-#ciwei-pet.sleeping .cp-body::before {
-    background: radial-gradient(circle, rgba(120,160,255,.3) 0%, transparent 70%);
-}
-
 #ciwei-pet .cp-shadow {
-    position: absolute;
-    bottom: -6px; left: 50%;
-    transform: translateX(-50%);
-    width: 66%; height: 9px;
+    position: absolute; bottom: -6px; left: 50%;
+    transform: translateX(-50%); width: 66%; height: 9px;
     background: radial-gradient(ellipse, rgba(0,0,0,.32) 0%, transparent 72%);
-    border-radius: 50%;
-    pointer-events: none; z-index: -1;
+    border-radius: 50%; pointer-events: none; z-index: -1;
     transition: all .28s cubic-bezier(.22,1,.36,1);
 }
-#ciwei-pet.dragging .cp-shadow {
-    opacity: .12;
-    transform: translateX(-50%) scale(1.4);
-    bottom: -14px;
-}
+#ciwei-pet.dragging .cp-shadow { opacity: .12; transform: translateX(-50%) scale(1.4); bottom: -14px; }
 #ciwei-pet.sleeping .cp-shadow { width: 76%; opacity: .5; }
 
 #ciwei-pet .cp-tilt {
@@ -120,581 +103,276 @@ body[data-fps="low"] #ciwei-pet .cp-body::before { animation: none; opacity: .35
     transition: transform var(--cp-tilt) cubic-bezier(.22,1,.36,1);
     z-index: 1;
 }
-
 #ciwei-pet .cp-light {
-    position: absolute; inset: -18px;
-    border-radius: 50%;
+    position: absolute; inset: -18px; border-radius: 50%;
     pointer-events: none; z-index: 2;
-    background: radial-gradient(circle at var(--cp-light-x, 50%) var(--cp-light-y, 50%),
-        rgba(255,255,255,.36) 0%, transparent 55%);
-    mix-blend-mode: overlay;
-    opacity: .7;
-    transition: opacity .3s;
+    background: radial-gradient(circle at var(--cp-light-x, 50%) var(--cp-light-y, 50%), rgba(255,255,255,.36) 0%, transparent 55%);
+    mix-blend-mode: overlay; opacity: .7; transition: opacity .3s;
 }
 #ciwei-pet.sleeping .cp-light { opacity: .25; }
 
 #ciwei-pet .cp-img {
-    width: 100%; height: 100%;
-    object-fit: contain;
+    width: 100%; height: 100%; object-fit: contain;
     filter: drop-shadow(0 5px 14px rgba(0,0,0,.22));
-    pointer-events: none;
-    transition: filter .22s ease-out;
+    pointer-events: none; transition: filter .22s ease-out;
     -webkit-user-drag: none;
 }
-#ciwei-pet.sleeping .cp-img {
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,.14)) saturate(.85) brightness(.96);
-}
+#ciwei-pet.sleeping .cp-img { filter: drop-shadow(0 4px 10px rgba(0,0,0,.14)) saturate(.85) brightness(.96); }
 
-#ciwei-pet.squash .cp-img {
-    animation: cp-squash .42s cubic-bezier(.34,1.56,.64,1);
-}
-@keyframes cp-squash {
-    0%   { transform: scale(1, 1); }
-    30%  { transform: scale(1.2, .8); }
-    60%  { transform: scale(.9, 1.13); }
-    100% { transform: scale(1, 1); }
-}
+#ciwei-pet.squash .cp-img { animation: cp-squash .42s cubic-bezier(.34,1.56,.64,1); }
+@keyframes cp-squash { 0% { transform: scale(1, 1); } 30% { transform: scale(1.2, .8); } 60% { transform: scale(.9, 1.13); } 100% { transform: scale(1, 1); } }
 
-#ciwei-pet.spin .cp-tilt {
-    animation: cp-spin .85s cubic-bezier(.34,1.56,.64,1);
-}
-@keyframes cp-spin {
-    0%   { transform: rotate(0deg) scale(1); }
-    50%  { transform: rotate(180deg) scale(1.1); }
-    100% { transform: rotate(360deg) scale(1); }
-}
+#ciwei-pet.spin .cp-tilt { animation: cp-spin .85s cubic-bezier(.34,1.56,.64,1); }
+@keyframes cp-spin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
 
-#ciwei-pet.sleeping .cp-body {
-    animation: cp-sleepBreath 4.5s ease-in-out infinite;
-}
-@keyframes cp-sleepBreath {
-    0%, 100% { transform: scale(1) rotate(-1.2deg); }
-    50%      { transform: scale(1.03) translateY(-2px) rotate(1.5deg); }
-}
+#ciwei-pet.sleeping .cp-body { animation: cp-sleepBreath 4.5s ease-in-out infinite; }
+@keyframes cp-sleepBreath { 0%, 100% { transform: scale(1) rotate(-1.2deg); } 50% { transform: scale(1.03) translateY(-2px) rotate(1.5deg); } }
 
-#ciwei-pet .cp-zzz {
-    position: absolute;
-    top: -6px; right: -14px;
-    font-size: 17px;
-    opacity: 0;
-    pointer-events: none; z-index: 2;
-}
-#ciwei-pet.sleeping .cp-zzz {
-    animation: cp-zzzFloat var(--cp-zzz) ease-out infinite;
-}
-@keyframes cp-zzzFloat {
-    0%   { opacity: 0; transform: translate(0, 0) scale(.5); }
-    22%  { opacity: 1; transform: translate(-4px, -10px) scale(.9); }
-    65%  { opacity: .7; transform: translate(-16px, -32px) scale(1.1); }
-    100% { opacity: 0; transform: translate(-26px, -54px) scale(1.25); }
-}
+#ciwei-pet .cp-zzz { position: absolute; top: -6px; right: -14px; font-size: 17px; opacity: 0; pointer-events: none; z-index: 2; }
+#ciwei-pet.sleeping .cp-zzz { animation: cp-zzzFloat var(--cp-zzz) ease-out infinite; }
+@keyframes cp-zzzFloat { 0% { opacity: 0; transform: translate(0, 0) scale(.5); } 22% { opacity: 1; transform: translate(-4px, -10px) scale(.9); } 65% { opacity: .7; transform: translate(-16px, -32px) scale(1.1); } 100% { opacity: 0; transform: translate(-26px, -54px) scale(1.25); } }
 
-/* ==================== 气泡（关键修复：横向单行优先） ==================== */
+/* ==================== 气泡 ==================== */
 #ciwei-pet .cp-bubble {
-    position: absolute;
-    left: 50%; bottom: calc(100% + 10px);
+    position: absolute; left: 50%; bottom: calc(100% + 10px);
     transform: translateX(-50%) translateY(6px) scale(.9);
-    background: rgba(30, 30, 45, .94);
-    color: #fff;
-    padding: 8px 14px;
-    border-radius: 14px 14px 4px 14px;
+    background: var(--bubble-bg); color: var(--bubble-text);
+    padding: 8px 14px; border-radius: 14px 14px 4px 14px;
     font-size: 13px; font-weight: 500; line-height: 1.5;
-    box-shadow: 0 6px 20px rgba(0,0,0,.28);
-    /* 关键：让气泡撑开宽度，不被父容器限制 */
-    width: max-content;
-    max-width: 280px;
-    min-width: 60px;
-    /* 文字不强制换行，超宽才换 */
-    white-space: nowrap;
-    word-break: normal;
-    text-align: left;
-    opacity: 0;
-    transition: all var(--cp-bubble) cubic-bezier(.22,1,.36,1);
-    pointer-events: none;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,.1);
-    z-index: 10;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    width: max-content; max-width: 280px; min-width: 60px;
+    white-space: nowrap; word-break: normal; text-align: left;
+    opacity: 0; transition: all var(--cp-bubble) cubic-bezier(.22,1,.36,1);
+    pointer-events: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--panel-border); z-index: 10;
 }
-#ciwei-pet .cp-bubble.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-}
-/* 超过 max-width 时才允许换行 */
-#ciwei-pet .cp-bubble.long {
-    white-space: normal;
-    word-break: break-word;
-}
+#ciwei-pet .cp-bubble.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+#ciwei-pet .cp-bubble.long { white-space: normal; word-break: break-word; }
 #ciwei-pet .cp-bubble::after {
-    content: '';
-    position: absolute;
-    bottom: -5px; right: 18px;
-    width: 10px; height: 10px;
-    background: rgba(30, 30, 45, .94);
-    transform: rotate(45deg);
-    border-right: 1px solid rgba(255,255,255,.1);
-    border-bottom: 1px solid rgba(255,255,255,.1);
+    content: ''; position: absolute; bottom: -5px; right: 18px; width: 10px; height: 10px;
+    background: var(--bubble-bg); transform: rotate(45deg);
+    border-right: 1px solid var(--panel-border); border-bottom: 1px solid var(--panel-border);
     border-radius: 0 0 2px 0;
 }
-#ciwei-pet.bubble-below .cp-bubble {
-    bottom: auto; top: calc(100% + 10px);
-    border-radius: 4px 14px 14px 14px;
-    transform: translateX(-50%) translateY(-6px) scale(.9);
-}
-#ciwei-pet.bubble-below .cp-bubble.show {
-    transform: translateX(-50%) translateY(0) scale(1);
-}
-#ciwei-pet.bubble-below .cp-bubble::after {
-    bottom: auto; top: -5px; right: 18px;
-    border: none;
-    border-left: 1px solid rgba(255,255,255,.1);
-    border-top: 1px solid rgba(255,255,255,.1);
-    border-radius: 2px 0 0 0;
-}
-/* 靠近屏幕边缘时，气泡居中对齐可能溢出，用小尺寸模式 */
-body[data-fps="low"] #ciwei-pet .cp-bubble {
-    backdrop-filter: none; -webkit-backdrop-filter: none;
-    background: rgba(30, 30, 45, .98);
-}
+#ciwei-pet.bubble-below .cp-bubble { bottom: auto; top: calc(100% + 10px); border-radius: 4px 14px 14px 14px; transform: translateX(-50%) translateY(-6px) scale(.9); }
+#ciwei-pet.bubble-below .cp-bubble.show { transform: translateX(-50%) translateY(0) scale(1); }
+#ciwei-pet.bubble-below .cp-bubble::after { bottom: auto; top: -5px; right: 18px; border: none; border-left: 1px solid var(--panel-border); border-top: 1px solid var(--panel-border); border-radius: 2px 0 0 0; }
 
 /* ==================== 工具栏 ==================== */
 #ciwei-pet .cp-toolbar {
-    position: absolute;
-    left: 50%; top: calc(100% + 6px);
+    position: absolute; left: 50%; top: calc(100% + 6px);
     transform: translateX(-50%) translateY(-6px);
-    display: flex; gap: 2px;
-    background: rgba(30, 30, 45, .88);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    padding: 3px; border-radius: 18px;
-    border: 1px solid rgba(255,255,255,.1);
-    box-shadow: 0 6px 18px rgba(0,0,0,.25);
-    opacity: 0;
-    transition: all var(--cp-toolbar) cubic-bezier(.22,1,.36,1);
-    pointer-events: none;
-    z-index: 5;
+    display: flex; gap: 2px; background: var(--panel-bg);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    padding: 3px; border-radius: 18px; border: 1px solid var(--panel-border);
+    box-shadow: 0 6px 18px rgba(0,0,0,.12); opacity: 0;
+    transition: all .24s cubic-bezier(.22,1,.36,1); pointer-events: none; z-index: 5;
 }
-#ciwei-pet.show-toolbar .cp-toolbar,
-#ciwei-pet:hover .cp-toolbar {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
-}
-#ciwei-pet.toolbar-above .cp-toolbar {
-    top: auto; bottom: calc(100% + 6px);
-    transform: translateX(-50%) translateY(6px);
-}
-#ciwei-pet.toolbar-above.show-toolbar .cp-toolbar,
-#ciwei-pet.toolbar-above:hover .cp-toolbar {
-    transform: translateX(-50%) translateY(0);
-}
-body[data-fps="low"] #ciwei-pet .cp-toolbar {
-    backdrop-filter: none; -webkit-backdrop-filter: none;
-    background: rgba(30, 30, 45, .98);
-}
-
+#ciwei-pet.show-toolbar .cp-toolbar, #ciwei-pet:hover .cp-toolbar { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+#ciwei-pet.toolbar-above .cp-toolbar { top: auto; bottom: calc(100% + 6px); transform: translateX(-50%) translateY(6px); }
+#ciwei-pet.toolbar-above.show-toolbar .cp-toolbar, #ciwei-pet.toolbar-above:hover .cp-toolbar { transform: translateX(-50%) translateY(0); }
 #ciwei-pet .cp-toolbar-btn {
-    width: 28px; height: 28px;
-    border-radius: 50%; border: none;
-    background: transparent;
-    color: rgba(255,255,255,.75);
-    cursor: pointer; font-size: 13px;
-    display: flex; align-items: center; justify-content: center;
-    transition: all .18s;
-    -webkit-tap-highlight-color: transparent;
+    width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent;
+    color: var(--text-main); opacity: .7; cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center; transition: all .18s;
 }
-#ciwei-pet .cp-toolbar-btn:hover {
-    background: rgba(255,255,255,.16);
-    color: #fff; transform: scale(1.18);
-}
+#ciwei-pet .cp-toolbar-btn:hover { background: var(--item-hover); opacity: 1; transform: scale(1.18); }
 #ciwei-pet .cp-toolbar-btn:active { transform: scale(.85); }
 
 /* ==================== 粒子 ==================== */
-#ciwei-pet-particles {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 99998;
-    overflow: hidden;
-}
-#ciwei-pet-particles .cp-particle {
-    position: absolute;
-    pointer-events: none;
-    will-change: transform, opacity;
-    animation: cp-particleFly var(--cp-particle, 1.15s) cubic-bezier(.22,.61,.36,1) forwards;
-}
-@keyframes cp-particleFly {
-    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
-    20%  { opacity: 1; }
-    100% { opacity: 0;
-           transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)))
-                     scale(1.15) rotate(var(--rot)); }
-}
+#ciwei-pet-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99998; overflow: hidden; }
+#ciwei-pet-particles .cp-particle { position: absolute; pointer-events: none; will-change: transform, opacity; animation: cp-particleFly 1.15s cubic-bezier(.22,.61,.36,1) forwards; }
+@keyframes cp-particleFly { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.15) rotate(var(--rot)); } }
 
-/* ==================== 主菜单：横排图标条 ==================== */
-#ciwei-pet-menu {
-    position: fixed;
-    background: rgba(28, 28, 42, .96);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 14px;
-    padding: 5px;
-    box-shadow: 0 12px 36px rgba(0,0,0,.4);
-    z-index: 100000;
-    display: none;
+/* ==================== 主菜单/二级菜单/对话框/设置面板 ==================== */
+#ciwei-pet-menu, #ciwei-pet-submenu, #ciwei-pet-dialogue, #ciwei-pet-settings {
+    position: fixed; background: var(--panel-bg); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--panel-border); border-radius: 14px;
+    box-shadow: 0 12px 36px rgba(0,0,0,.15); z-index: 100000; display: none;
     font-family: -apple-system, 'PingFang SC', 'Segoe UI', 'Inter', sans-serif;
-    animation: cp-menuIn .18s cubic-bezier(.22,1,.36,1);
+    color: var(--text-main); animation: cp-menuIn .18s cubic-bezier(.22,1,.36,1);
     transform-origin: top left;
 }
-#ciwei-pet-menu.show { display: flex; gap: 2px; }
-@keyframes cp-menuIn {
-    from { opacity: 0; transform: scale(.9) translateY(-6px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-}
+@keyframes cp-menuIn { from { opacity: 0; transform: scale(.9) translateY(-6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+#ciwei-pet-menu.show { display: flex; gap: 2px; padding: 5px; }
+#ciwei-pet-submenu.show, #ciwei-pet-dialogue.show, #ciwei-pet-settings.show { display: block; }
 
-#ciwei-pet-menu .cp-mi {
-    position: relative;
-    width: 38px; height: 38px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 17px;
-    cursor: pointer;
-    transition: all .15s;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-}
-#ciwei-pet-menu .cp-mi:hover {
-    background: rgba(255,255,255,.12);
-    transform: translateY(-2px);
-}
-#ciwei-pet-menu .cp-mi:active {
-    transform: translateY(0) scale(.92);
-}
-#ciwei-pet-menu .cp-mi.danger:hover {
-    background: rgba(239,68,68,.18);
-}
-/* 悬浮文字提示 */
+#ciwei-pet-menu .cp-mi { position: relative; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; cursor: pointer; transition: all .15s; }
+#ciwei-pet-menu .cp-mi:hover { background: var(--item-hover); transform: translateY(-2px); }
+#ciwei-pet-menu .cp-mi:active { transform: translateY(0) scale(.92); }
 #ciwei-pet-menu .cp-mi::after {
-    content: attr(data-label);
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%) translateY(-4px);
-    font-size: 11px;
-    color: rgba(255,255,255,.9);
-    background: rgba(15, 15, 22, .96);
-    padding: 3px 8px;
-    border-radius: 6px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: all .18s;
-    z-index: 1;
+    content: attr(data-label); position: absolute; top: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%) translateY(-4px); font-size: 11px; color: var(--bubble-text);
+    background: var(--panel-bg); padding: 3px 8px; border-radius: 6px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: all .18s; z-index: 1; border: 1px solid var(--panel-border);
 }
-#ciwei-pet-menu .cp-mi:hover::after {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
+#ciwei-pet-menu .cp-mi:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ==================== 二级菜单（设置） ==================== */
-#ciwei-pet-submenu {
-    position: fixed;
-    background: rgba(28, 28, 42, .97);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 12px;
-    padding: 5px;
-    box-shadow: 0 16px 44px rgba(0,0,0,.5);
-    z-index: 100001;
-    display: none;
-    min-width: 170px;
-    font-family: -apple-system, 'PingFang SC', 'Segoe UI', 'Inter', sans-serif;
-    animation: cp-menuIn .18s cubic-bezier(.22,1,.36,1);
-    transform-origin: top left;
-}
-#ciwei-pet-submenu.show { display: block; }
-#ciwei-pet-submenu .cp-sub-item {
-    padding: 8px 12px;
-    font-size: 13px;
-    color: rgba(255,255,255,.82);
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex; align-items: center; gap: 8px;
-    transition: all .14s;
-    user-select: none;
-    white-space: nowrap;
-}
-#ciwei-pet-submenu .cp-sub-item:hover {
-    background: rgba(255,255,255,.1);
-    color: #fff;
-}
-#ciwei-pet-submenu .cp-sub-item:active {
-    background: rgba(255,255,255,.14);
-    transform: scale(.98);
-}
-#ciwei-pet-submenu .cp-sub-item.danger:hover {
-    background: rgba(239,68,68,.18);
-    color: #f87171;
-}
-#ciwei-pet-submenu .cp-sub-item .cp-sub-check {
-    margin-left: auto;
-    font-size: 11px;
-    color: rgba(255,255,255,.5);
-    font-variant-numeric: tabular-nums;
-}
-#ciwei-pet-submenu .cp-sub-item.active .cp-sub-check { color: #58a6ff; }
-#ciwei-pet-submenu .cp-sep {
-    height: 1px;
-    background: rgba(255,255,255,.08);
-    margin: 4px 8px;
-}
+#ciwei-pet-submenu { padding: 5px; min-width: 170px; }
+#ciwei-pet-submenu .cp-sub-item { padding: 8px 12px; font-size: 13px; color: var(--text-sub); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all .14s; white-space: nowrap; }
+#ciwei-pet-submenu .cp-sub-item:hover { background: var(--item-hover); color: var(--text-main); }
+#ciwei-pet-submenu .cp-sub-item:active { transform: scale(.98); }
+#ciwei-pet-submenu .cp-sub-item .cp-sub-check { margin-left: auto; font-size: 11px; color: var(--text-sub); }
+#ciwei-pet-submenu .cp-sep { height: 1px; background: var(--panel-border); margin: 4px 8px; }
 
-/* ==================== 对话面板 ==================== */
-#ciwei-pet-dialogue {
-    position: fixed;
-    background: rgba(28, 28, 42, .97);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 14px;
-    padding: 6px;
-    box-shadow: 0 16px 44px rgba(0,0,0,.5);
-    z-index: 100000;
-    display: none;
-    min-width: 220px;
-    max-width: 280px;
-    max-height: 60vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    font-family: -apple-system, 'PingFang SC', 'Segoe UI', 'Inter', sans-serif;
-    animation: cp-menuIn .2s cubic-bezier(.22,1,.36,1);
-    transform-origin: top left;
-}
-#ciwei-pet-dialogue.show { display: block; }
+#ciwei-pet-dialogue { min-width: 220px; max-width: 280px; max-height: 60vh; overflow-y: auto; overflow-x: hidden; padding: 6px; }
 #ciwei-pet-dialogue::-webkit-scrollbar { width: 3px; }
-#ciwei-pet-dialogue::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,.2);
-    border-radius: 4px;
-}
-#ciwei-pet-dialogue .cp-dlg-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 10px 8px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    margin-bottom: 4px;
-    position: sticky;
-    top: 0;
-    background: rgba(28, 28, 42, .97);
-    border-radius: 14px 14px 0 0;
-    z-index: 1;
-}
-#ciwei-pet-dialogue .cp-dlg-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(255,255,255,.6);
-    letter-spacing: .5px;
-}
-#ciwei-pet-dialogue .cp-dlg-close {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,.4);
-    font-size: 14px;
-    cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 6px;
-    transition: all .15s;
-    line-height: 1;
-}
-#ciwei-pet-dialogue .cp-dlg-close:hover {
-    background: rgba(255,255,255,.1);
-    color: #fff;
-}
-#ciwei-pet-dialogue .cp-dlg-item {
-    padding: 9px 12px;
-    font-size: 13px;
-    color: rgba(255,255,255,.82);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all .14s;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    line-height: 1.3;
-    position: relative;
-}
-#ciwei-pet-dialogue .cp-dlg-item:hover {
-    background: rgba(255,255,255,.1);
-    color: #fff;
-}
-#ciwei-pet-dialogue .cp-dlg-item:active {
-    background: rgba(255,255,255,.14);
-    transform: scale(.98);
-}
-#ciwei-pet-dialogue .cp-dlg-item .cp-dlg-icon {
-    font-size: 13px;
-    flex-shrink: 0;
-    opacity: .6;
-}
-#ciwei-pet-dialogue .cp-dlg-item.asked {
-    color: rgba(255,255,255,.35);
-}
-#ciwei-pet-dialogue .cp-dlg-item.asked .cp-dlg-icon {
-    color: rgba(88,166,255,.7);
-    opacity: 1;
-}
-#ciwei-pet-dialogue .cp-dlg-item.asked::after {
-    content: '✓';
-    position: absolute;
-    right: 10px;
-    font-size: 11px;
-    color: rgba(88,166,255,.6);
-}
-#ciwei-pet-dialogue .cp-dlg-item.secret {
-    color: #fbbf24;
-}
-#ciwei-pet-dialogue .cp-dlg-item.secret .cp-dlg-icon {
-    color: #fbbf24;
-    opacity: 1;
-}
-#ciwei-pet-dialogue .cp-dlg-item.secret:hover {
-    background: rgba(251,191,36,.14);
-    color: #fbbf24;
-}
-#ciwei-pet-dialogue .cp-dlg-item.replying {
-    background: rgba(88,166,255,.15);
-    color: #fff;
-}
-#ciwei-pet-dialogue .cp-dlg-item.replying::after {
-    content: '…';
-    position: absolute;
-    right: 10px;
-    font-size: 13px;
-    color: #58a6ff;
-    animation: cp-dots 1.2s steps(4) infinite;
-}
-@keyframes cp-dots {
-    0% { content: ''; }
-    25% { content: '.'; }
-    50% { content: '..'; }
-    75% { content: '...'; }
-}
+#ciwei-pet-dialogue::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 4px; }
+#ciwei-pet-dialogue .cp-dlg-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px 8px; border-bottom: 1px solid var(--panel-border); margin-bottom: 4px; position: sticky; top: 0; background: var(--panel-bg); border-radius: 14px 14px 0 0; z-index: 1; }
+#ciwei-pet-dialogue .cp-dlg-title { font-size: 12px; font-weight: 600; color: var(--text-sub); letter-spacing: .5px; }
+#ciwei-pet-dialogue .cp-dlg-close { background: none; border: none; color: var(--text-sub); font-size: 14px; cursor: pointer; padding: 2px 6px; border-radius: 6px; }
+#ciwei-pet-dialogue .cp-dlg-close:hover { background: var(--item-hover); color: var(--text-main); }
+#ciwei-pet-dialogue .cp-dlg-item { padding: 9px 12px; font-size: 13px; color: var(--text-main); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; position: relative; }
+#ciwei-pet-dialogue .cp-dlg-item:hover { background: var(--item-hover); }
+#ciwei-pet-dialogue .cp-dlg-item:active { background: var(--item-hover); transform: scale(.98); }
+#ciwei-pet-dialogue .cp-dlg-item .cp-dlg-icon { font-size: 13px; flex-shrink: 0; opacity: .6; }
+#ciwei-pet-dialogue .cp-dlg-item.asked { color: var(--text-sub); opacity: .6; }
+#ciwei-pet-dialogue .cp-dlg-item.asked::after { content: '✓'; position: absolute; right: 10px; font-size: 11px; color: #58a6ff; }
+#ciwei-pet-dialogue .cp-dlg-item.secret { color: #fbbf24; }
+#ciwei-pet-dialogue .cp-dlg-item.replying { background: rgba(88,166,255,.15); color: var(--text-main); }
+#ciwei-pet-dialogue .cp-dlg-item.replying::after { content: '…'; position: absolute; right: 10px; color: #58a6ff; animation: cp-dots 1.2s steps(4) infinite; }
+@keyframes cp-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
 
-/* ==================== 恢复按钮 ==================== */
+/* 聊天输入区 */
+.cp-input-area { padding: 6px; border-top: 1px solid var(--panel-border); display: flex; gap: 6px; align-items: center; position: sticky; bottom: 0; background: inherit; }
+.cp-input-area input[type="text"] { flex: 1; background: var(--input-bg); border: 1px solid transparent; border-radius: 8px; padding: 6px 10px; color: var(--text-main); font-size: 13px; outline: none; transition: border .15s; }
+.cp-input-area input[type="text"]:focus { border-color: #58a6ff; }
+.cp-input-area button { background: #58a6ff; border: none; border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 13px; cursor: pointer; transition: background .15s; }
+.cp-input-area button:hover { background: #4a95e6; }
+
+/* AI 设置面板 */
+#ciwei-pet-settings { min-width: 260px; max-width: 300px; padding: 16px; max-height: 70vh; overflow-y: auto; }
+#ciwei-pet-settings .cp-set-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+#ciwei-pet-settings .cp-set-title .cp-close-btn { background: none; border: none; color: var(--text-sub); font-size: 16px; cursor: pointer; }
+#ciwei-pet-settings .cp-set-group { margin-bottom: 12px; }
+#ciwei-pet-settings .cp-set-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
+#ciwei-pet-settings .cp-set-group input[type="text"], #ciwei-pet-settings .cp-set-group input[type="password"] { width: 100%; background: var(--input-bg); border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; color: var(--text-main); font-size: 12px; outline: none; }
+#ciwei-pet-settings .cp-set-group input:focus { border-color: #58a6ff; }
+#ciwei-pet-settings .cp-set-row { display: flex; gap: 6px; }
+#ciwei-pet-settings .cp-set-row button { flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; background: var(--input-bg); color: var(--text-main); transition: background .15s; }
+#ciwei-pet-settings .cp-set-row button:hover { background: var(--item-hover); }
+#ciwei-pet-settings .cp-set-row button.primary { background: #58a6ff; color: #fff; }
+#ciwei-pet-settings .cp-set-row button.primary:hover { background: #4a95e6; }
+#ciwei-pet-settings .cp-set-info { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
+
+/* 恢复按钮 */
 #ciwei-pet-restore {
-    position: fixed;
-    bottom: 16px; right: 16px;
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: rgba(30, 30, 45, .9);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,.12);
-    box-shadow: 0 6px 20px rgba(0,0,0,.3);
-    display: none;
-    align-items: center; justify-content: center;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 100001;
-    transition: all .25s;
-    animation: cp-restoreIn .4s cubic-bezier(.22,1,.36,1);
+    position: fixed; bottom: 16px; right: 16px; width: 44px; height: 44px;
+    border-radius: 50%; background: var(--panel-bg); backdrop-filter: blur(14px);
+    border: 1px solid var(--panel-border); box-shadow: 0 6px 20px rgba(0,0,0,.15);
+    display: none; align-items: center; justify-content: center; font-size: 20px;
+    cursor: pointer; z-index: 100001; animation: cp-restoreIn .4s cubic-bezier(.22,1,.36,1);
 }
 #ciwei-pet-restore.show { display: flex; }
 #ciwei-pet-restore:hover { transform: scale(1.1); border-color: #58a6ff; }
-#ciwei-pet-restore:active { transform: scale(.92); }
-@keyframes cp-restoreIn {
-    from { opacity: 0; transform: scale(.6) translateY(10px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-}
 
 @media (max-width: 600px) {
     #ciwei-pet .cp-bubble { font-size: 12px; padding: 6px 11px; max-width: 220px; }
     #ciwei-pet .cp-toolbar-btn { width: 25px; height: 25px; font-size: 12px; }
     #ciwei-pet-restore { width: 40px; height: 40px; font-size: 18px; }
     #ciwei-pet-menu .cp-mi { width: 34px; height: 34px; font-size: 15px; }
-    #ciwei-pet-submenu { min-width: 150px; }
-    #ciwei-pet-submenu .cp-sub-item { padding: 9px 12px; font-size: 13.5px; }
     #ciwei-pet-dialogue { min-width: 200px; max-width: 240px; }
-    #ciwei-pet-dialogue .cp-dlg-item { padding: 10px 12px; font-size: 13.5px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    #ciwei-pet, #ciwei-pet *,
-    #ciwei-pet-particles, #ciwei-pet-particles * {
-        animation-duration: .01ms !important;
-        transition-duration: .01ms !important;
-    }
+    #ciwei-pet-settings { min-width: 240px; max-width: 260px; }
 }
 </style>
 </head>
-<body class="standalone">
+<body>
 
 <!-- 粒子层 -->
 <div id="ciwei-pet-particles"></div>
 
-<!-- 一级菜单：横排图标条 -->
+<!-- 一级菜单 -->
 <div id="ciwei-pet-menu">
     <div class="cp-mi" data-menu="love"     data-label="摸摸头">❤️</div>
     <div class="cp-mi" data-menu="food"     data-label="喂食">🍎</div>
     <div class="cp-mi" data-menu="dialogue" data-label="聊天">💬</div>
     <div class="cp-mi" data-menu="sleep"    data-label="哄睡">💤</div>
     <div class="cp-mi" data-menu="spin"     data-label="转圈">🔄</div>
-    <div class="cp-mi" data-menu="more"     data-label="更多">⚙️</div>
+    <div class="cp-mi" data-menu="settings" data-label="设置">⚙️</div>
 </div>
 
-<!-- 二级菜单：更多设置 -->
+<!-- 二级菜单 -->
 <div id="ciwei-pet-submenu">
     <div class="cp-sub-item" data-menu="roam">🚶 <span>散散步</span></div>
     <div class="cp-sub-item" data-menu="reset">🏠 <span>回角落</span></div>
     <div class="cp-sep"></div>
     <div class="cp-sub-item" data-menu="scale-up">🔍➕ <span>放大</span></div>
     <div class="cp-sub-item" data-menu="scale-down">🔍➖ <span>缩小</span></div>
-    <div class="cp-sub-item" data-menu="scale-reset">
-        📏 <span>重置大小</span>
-        <span class="cp-sub-check" id="cp-scale-check">100%</span>
-    </div>
+    <div class="cp-sub-item" data-menu="scale-reset">📏 <span>重置大小</span><span class="cp-sub-check" id="cp-scale-check">100%</span></div>
     <div class="cp-sep"></div>
-    <div class="cp-sub-item active" data-menu="sound">
-        🔊 <span>音效</span>
-        <span class="cp-sub-check" id="cp-sound-check">开启</span>
-    </div>
+    <div class="cp-sub-item active" data-menu="sound">🔊 <span>音效</span><span class="cp-sub-check" id="cp-sound-check">开启</span></div>
     <div class="cp-sep"></div>
     <div class="cp-sub-item danger" data-menu="hide">🙈 <span>隐藏</span></div>
 </div>
 
-<!-- 对话面板（增强版） -->
+<!-- 聊天面板 -->
 <div id="ciwei-pet-dialogue">
     <div class="cp-dlg-header">
         <span class="cp-dlg-title">💬 和小c聊天</span>
         <button class="cp-dlg-close" id="cp-dlg-close">✕</button>
     </div>
     <div id="cp-dlg-body"></div>
-    
-    <!-- 新增的输入区域 -->
-    <div class="cp-input-area" style="padding: 6px; border-top: 1px solid rgba(255,255,255,.08); display: flex; gap: 6px; align-items: center; position: sticky; bottom: 0; background: inherit;">
-        <button id="cp-upload-btn" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer;" title="上传图片">📎</button>
+    <div class="cp-input-area">
+        <button id="cp-upload-btn" style="background:transparent; color:var(--text-sub); font-size:16px; padding:2px;" title="上传图片">📎</button>
         <input type="file" id="cp-file-input" accept="image/*" style="display:none;">
-        <input type="text" id="cp-chat-input" placeholder="打字问我..." style="flex:1; background:rgba(255,255,255,.08); border:none; border-radius:8px; padding:6px 10px; color:#fff; font-size:13px; outline:none;">
-        <button id="cp-send-btn" style="background:#58a6ff; border:none; border-radius:8px; padding:6px 12px; color:#fff; font-size:13px; cursor:pointer;">发送</button>
+        <input type="text" id="cp-chat-input" placeholder="打字问我..." autocomplete="off">
+        <button id="cp-send-btn">发送</button>
+    </div>
+</div>
+
+<!-- AI 设置面板 -->
+<div id="ciwei-pet-settings">
+    <div class="cp-set-title">
+        <span>⚙️ AI 控制面板</span>
+        <button class="cp-close-btn" id="cp-set-close">✕</button>
+    </div>
+    <div class="cp-set-group">
+        <label>🔑 DeepSeek API Key</label>
+        <div class="cp-set-row">
+            <input type="password" id="cp-set-key" placeholder="sk-...">
+            <button id="cp-set-key-save" class="primary" style="flex:0 0 50px;">保存</button>
+        </div>
+        <div class="cp-set-info" id="cp-set-key-status">未配置</div>
+    </div>
+    <div class="cp-set-group">
+        <label>💰 余额查询</label>
+        <div class="cp-set-row">
+            <button id="cp-set-balance-btn">查询余额</button>
+        </div>
+        <div class="cp-set-info" id="cp-set-balance">点击查询</div>
+    </div>
+    <div class="cp-set-group">
+        <label>🧠 模型选择</label>
+        <div class="cp-set-row" id="cp-set-model">
+            <button data-model="flash" class="active">Flash · 快速</button>
+            <button data-model="pro">Pro · 推理</button>
+        </div>
+    </div>
+    <div class="cp-set-group">
+        <label>🌡️ 温度 <span id="cp-temp-val">0.7</span></label>
+        <input type="range" id="cp-set-temp" min="0" max="1.5" step="0.1" value="0.7" style="width:100%;">
+    </div>
+    <div class="cp-set-group">
+        <label>📏 上下文 <span id="cp-ctx-val">10</span> 行</label>
+        <input type="range" id="cp-set-ctx" min="3" max="30" step="1" value="10" style="width:100%;">
+    </div>
+    <div class="cp-set-group">
+        <label>⚡ 流式输出</label>
+        <div class="cp-set-row">
+            <button id="cp-set-stream" class="primary" style="flex:0 0 60px;">开启</button>
+        </div>
     </div>
 </div>
 
 <!-- 恢复按钮 -->
 <div id="ciwei-pet-restore">🦔</div>
 
-<!-- 宠物 -->
+<!-- 宠物本体 -->
 <div id="ciwei-pet">
     <div class="cp-bubble"></div>
     <div class="cp-toolbar">
-        <button class="cp-toolbar-btn" data-action="love"  title="摸摸头">❤️</button>
-        <button class="cp-toolbar-btn" data-action="food"  title="喂食">🍎</button>
+        <button class="cp-toolbar-btn" data-action="love" title="摸摸头">❤️</button>
+        <button class="cp-toolbar-btn" data-action="food" title="喂食">🍎</button>
         <button class="cp-toolbar-btn" data-action="dialogue" title="聊天">💬</button>
         <button class="cp-toolbar-btn" data-action="sleep" title="哄睡">💤</button>
         <button class="cp-toolbar-btn" data-action="reset" title="归位">🏠</button>
@@ -716,7 +394,7 @@ body[data-fps="low"] #ciwei-pet .cp-toolbar {
 if (window.self === window.top) document.body.classList.add('standalone');
 
 // ============================================================
-// 身份档案
+// 身份档案与数据
 // ============================================================
 var PET_PROFILE = {
     name: '小c',
@@ -735,40 +413,18 @@ var IMAGES = {
 var SCALES = [0.7, 0.85, 1.0, 1.25, 1.5, 2.0];
 var DEFAULT_SCALE_INDEX = 2;
 
-// ============================================================
-// 对话数据
-// ============================================================
 var DIALOGUES = [
-    // === 身份向 ===
     { id:'who',       icon:'🦔', q:'你是谁？',         a:'我是{name}，{developer} 的电子宠物刺猬。', face:'happy' },
     { id:'info',      icon:'📇', q:'你的信息',         a:'我叫{name}，生日是 {birthday}。{ipLine}', face:'idle1' },
     { id:'age',       icon:'🎂', q:'你多大了？',       a:'我出生于 {birthday}，到今天已经 {days} 天啦！', face:'surprised' },
     { id:'developer', icon:'👨‍💻', q:'LouFoong 是谁？', a:'{developer} 是我的创造者，一个喜欢折腾的独立开发者。', face:'idle1' },
     { id:'like',      icon:'💖', q:'你喜欢什么？',     a:'喜欢被摸头，喜欢吃苹果。最讨厌被人一直戳！', face:'happy' },
-
-    // === 陪伴向 ===
     { id:'doing',     icon:'🌙', q:'你在干什么？',     a:'在发呆…或者在想你。', face:'idle1' },
     { id:'tired',     icon:'💤', q:'你会累吗？',       a:'不会，但我会困。戳我太久我会打瞌睡。', face:'sleep' },
-    { id:'sleepwhere',icon:'😴', q:'你睡哪里？',       a:'屏幕右下角，那里最舒服。', face:'happy' },
-    { id:'eat',       icon:'🍎', q:'你喜欢吃什么？',   a:'苹果，还有你喂我的每一个 emoji。', face:'happy' },
-    { id:'sing',      icon:'🎵', q:'你会唱歌吗？',     a:'不会，但我会吱吱叫。', face:'happy' },
-
-    // === 情绪向 ===
     { id:'sad',       icon:'😊', q:'我今天不开心',     a:'那我陪你待一会儿。你不说话我也在。', face:'idle1' },
-    { id:'mytired',   icon:'😢', q:'我累了',           a:'休息一下吧，我帮你看着屏幕。', face:'idle1' },
-    { id:'howtodo',   icon:'🤔', q:'我该怎么办',       a:'慢慢想，不急。刺猬也是慢慢长大的。', face:'idle1' },
-    { id:'annoyed',   icon:'🌧️', q:'今天好烦',         a:'那把我戳一顿吧，我不生气。', face:'angry' },
-
-    // === 趣味向 ===
     { id:'random',    icon:'🎲', q:'随便说点什么',     a:'你是想让我说俏皮话，还是想让我转圈圈？', face:'happy' },
-    { id:'fortune',   icon:'🔮', q:'我今天的运气怎么样？', a:'抬头看看屏幕…嗯，你今天会遇到一只好刺猬。', face:'surprised' },
-    { id:'choose',    icon:'🪙', q:'帮我选一个',       a:'正面是我，反面也是我。', face:'happy' },
-
-    // === AI 预留（先占位） ===
     { id:'ai-joke',   icon:'😂', q:'讲个笑话',         a:'（AI 还没上线…等我接上 DeepSeek，笑话管够）', face:'happy', ai:'tell_me_a_joke' },
     { id:'ai-chat',   icon:'🤖', q:'陪我聊聊天',       a:'（我现在的回答是固定的，等 LouFoong 给我接上 AI，我就能真的陪你聊天了）', face:'idle1', ai:'chat' },
-
-    // === 彩蛋解锁 ===
     { id:'secret',    icon:'🔒', q:'你的秘密是什么？', a:'你居然找到了这个彩蛋！{developer} 说你可以凭借这个界面的截图找他要1块钱', face:'surprised', hidden:true }
 ];
 
@@ -778,12 +434,7 @@ var MSG = {
     c3:  ['别戳了！', '再戳我就跑了！', '哼！'],
     c5:  ['喂！我生气了！', '小心我咬你！', '💢'],
     c8:  ['行吧你赢了……', '求你了放过我吧 🥺', '我认输……'],
-    idle: [
-        '今天天气不错～', '写代码好累啊', '有人在吗？', '我又饿了',
-        '☕ 来杯咖啡', '记得按时吃饭', '熬夜对身体不好哦',
-        '🦔 刺猬永不认输', '在想什么呢……', '要不要一起摸鱼？',
-        '嗯…发呆中…', '有点无聊～'
-    ],
+    idle: ['今天天气不错～', '写代码好累啊', '有人在吗？', '我又饿了', '☕ 来杯咖啡', '记得按时吃饭', '熬夜对身体不好哦', '🦔 刺猬永不认输', '在想什么呢……', '要不要一起摸鱼？', '嗯…发呆中…', '有点无聊～'],
     pet:  ['嘿嘿～好开心！', '咕噜咕噜~', '再摸摸嘛～', '好舒服~'],
     food: ['🍎 好吃！谢谢～', '吧唧吧唧…', '还要还要！'],
     sleep:['晚安～', '好困……我先睡一会儿', '呼呼呼……', '有点困了……'],
@@ -798,25 +449,17 @@ var MSG = {
 };
 
 var KEYS = {
-    pos:     'ciwei_pet_position',
-    sleeping:'ciwei_pet_sleeping',
-    last:    'ciwei_pet_last_interaction',
-    clicks:  'ciwei_pet_click_count',
-    hidden:  'ciwei_pet_hidden',
-    sound:   'ciwei_pet_sound',
-    scale:   'ciwei_pet_scale_index',
-    meeting: 'ciwei_pet_meeting_date',
-    asked:   'ciwei_pet_asked_dialogues',
-    secret:  'ciwei_pet_secret_unlocked'
+    pos:'ciwei_pet_position', sleeping:'ciwei_pet_sleeping', last:'ciwei_pet_last_interaction',
+    clicks:'ciwei_pet_click_count', hidden:'ciwei_pet_hidden', sound:'ciwei_pet_sound',
+    scale:'ciwei_pet_scale_index', meeting:'ciwei_pet_meeting_date', asked:'ciwei_pet_asked_dialogues',
+    secret:'ciwei_pet_secret_unlocked',
+    aiKey:'ciwei_ai_key', aiModel:'ciwei_ai_model', aiTemp:'ciwei_ai_temp', aiCtx:'ciwei_ai_ctx', aiStream:'ciwei_ai_stream'
 };
 
-var SIZE_DESKTOP = 120;
-var SIZE_MOBILE  = 88;
-var LONG_PRESS_MS = 500;
-var MOVE_THRESHOLD = 6;
+var SIZE_DESKTOP = 120, SIZE_MOBILE = 88, LONG_PRESS_MS = 500, MOVE_THRESHOLD = 6;
 
 // ============================================================
-// 工具
+// 工具函数
 // ============================================================
 var rand = function (a, b) { return a + Math.random() * (b - a); };
 var pick = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
@@ -825,10 +468,11 @@ var isMobile = function () { return window.matchMedia('(max-width: 600px)').matc
 var lsGet = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
 var lsSet = function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} };
 
-function daysSince(timestamp) {
-    if (!timestamp) return 0;
-    var diff = Date.now() - timestamp;
-    return Math.max(1, Math.floor(diff / (24 * 60 * 60 * 1000)) + 1);
+function getDaysSinceBirth() {
+    var birthTime = Date.UTC(2026, 8, 10, 0, 0, 0); 
+    var now = Date.now();
+    var diffDays = Math.floor((now - birthTime) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 ? diffDays : 0;
 }
 function formatBirthday(str) {
     var p = str.split('-');
@@ -836,7 +480,6 @@ function formatBirthday(str) {
     return p[0] + '年' + parseInt(p[1], 10) + '月' + parseInt(p[2], 10) + '日';
 }
 function fillTemplate(text) {
-    var meeting = parseInt(lsGet(KEYS.meeting) || '0', 10);
     return text
         .replace(/{name}/g, PET_PROFILE.name)
         .replace(/{developer}/g, PET_PROFILE.developer)
@@ -844,164 +487,96 @@ function fillTemplate(text) {
         .replace(/{ipLine}/g, PET_PROFILE.ipLine)
         .replace(/{days}/g, getDaysSinceBirth());
 }
-// ================= 动态计算小c的生日天数 =================
-function getDaysSinceBirth() {
-    // 小c的生日：2026-09-10 00:00:00（北京时间）
-    // 注意：JS里月份是从0开始的，所以9月是8
-    var birthTime = Date.UTC(2026, 8, 10, 0, 0, 0); 
-    var now = Date.now();
-    var diffDays = Math.floor((now - birthTime) / (1000 * 60 * 60 * 24));
-    return diffDays >= 0 ? diffDays : 0;
-}
 
 // ============================================================
-// DOM
+// DOM 元素
 // ============================================================
-var host         = document.getElementById('ciwei-pet');
-var particleLayer= document.getElementById('ciwei-pet-particles');
-var menu         = document.getElementById('ciwei-pet-menu');
-var submenu      = document.getElementById('ciwei-pet-submenu');
-var dialogue     = document.getElementById('ciwei-pet-dialogue');
-var dlgBody      = document.getElementById('cp-dlg-body');
-var dlgClose     = document.getElementById('cp-dlg-close');
-var restoreBtn   = document.getElementById('ciwei-pet-restore');
-var img          = host.querySelector('.cp-img');
-var bodyEl       = host.querySelector('.cp-body');
-var tiltEl       = host.querySelector('.cp-tilt');
-var lightEl      = host.querySelector('.cp-light');
-var bubble       = host.querySelector('.cp-bubble');
-var toolbar      = host.querySelector('.cp-toolbar');
-var soundChk     = document.getElementById('cp-sound-check');
-var scaleChk     = document.getElementById('cp-scale-check');
+var host = document.getElementById('ciwei-pet');
+var particleLayer = document.getElementById('ciwei-pet-particles');
+var menu = document.getElementById('ciwei-pet-menu');
+var submenu = document.getElementById('ciwei-pet-submenu');
+var dialogue = document.getElementById('ciwei-pet-dialogue');
+var dlgBody = document.getElementById('cp-dlg-body');
+var dlgClose = document.getElementById('cp-dlg-close');
+var settings = document.getElementById('ciwei-pet-settings');
+var setClose = document.getElementById('cp-set-close');
+var restoreBtn = document.getElementById('ciwei-pet-restore');
+var img = host.querySelector('.cp-img');
+var bodyEl = host.querySelector('.cp-body');
+var tiltEl = host.querySelector('.cp-tilt');
+var lightEl = host.querySelector('.cp-light');
+var bubble = host.querySelector('.cp-bubble');
+var toolbar = host.querySelector('.cp-toolbar');
+var soundChk = document.getElementById('cp-sound-check');
+var scaleChk = document.getElementById('cp-scale-check');
 
 // ============================================================
 // 状态
 // ============================================================
 var S = {
-    x:0, y:0,
-    sleeping:false, hidden:false, clicks:0,
-    last: Date.now(),
-    face:'idle1',
+    x:0, y:0, sleeping:false, hidden:false, clicks:0, last: Date.now(), face:'idle1',
     dragging:false, moved:false, longPressed:false,
-    sClientX:0, sClientY:0, sPosX:0, sPosY:0,
-    vx:0, vy:0,
-    lastMoveX:0, lastMoveY:0, lastMoveTime:0,
-    sliding:false,
-    soundOn:true, mood:60,
-    scaleIndex: DEFAULT_SCALE_INDEX,
+    sClientX:0, sClientY:0, sPosX:0, sPosY:0, vx:0, vy:0,
+    lastMoveX:0, lastMoveY:0, lastMoveTime:0, sliding:false,
+    soundOn:true, mood:60, scaleIndex: DEFAULT_SCALE_INDEX,
     bubbleTimer:null, typeTimer:null, resetTimer:null,
     struggleTimer:null, idleActionTimer:null, zzzTimer:null,
     avoidTimer:null, avoidCooldown:0, longPressTimer:null,
-    mouseX: window.innerWidth/2,
-    mouseY: window.innerHeight/2,
-    mouseActive:false,
-    dialogueOpen: false,
-    replyTimer: null
+    mouseX: window.innerWidth/2, mouseY: window.innerHeight/2, mouseActive:false,
+    dialogueOpen: false, replyTimer: null
 };
 var lastLongPressTime = 0;
 
 // ============================================================
 // 帧率检测
 // ============================================================
-var measuredFPS = 60, fpsFrames = 0;
-var fpsStart = performance.now();
-var fpsHistory = [];
-
+var measuredFPS = 60, fpsFrames = 0, fpsStart = performance.now(), fpsHistory = [];
 function tickFPS(now) {
     fpsFrames++;
     var elapsed = now - fpsStart;
     if (elapsed >= 500) {
         var m = Math.round(fpsFrames * 1000 / elapsed);
-        fpsHistory.push(m);
-        if (fpsHistory.length > 6) fpsHistory.shift();
-        var sum = 0;
-        for (var i = 0; i < fpsHistory.length; i++) sum += fpsHistory[i];
+        fpsHistory.push(m); if (fpsHistory.length > 6) fpsHistory.shift();
+        var sum = 0; for (var i = 0; i < fpsHistory.length; i++) sum += fpsHistory[i];
         measuredFPS = Math.round(sum / fpsHistory.length);
-        var cls = 'mid';
-        if (measuredFPS >= 90) cls = 'high';
-        else if (measuredFPS < 45) cls = 'low';
+        var cls = 'mid'; if (measuredFPS >= 90) cls = 'high'; else if (measuredFPS < 45) cls = 'low';
         document.body.dataset.fps = cls;
         fpsFrames = 0; fpsStart = now;
     }
 }
-function particleFactor() {
-    if (measuredFPS >= 100) return 1.4;
-    if (measuredFPS >= 60)  return 1.0;
-    if (measuredFPS >= 40)  return .75;
-    return .5;
-}
+function particleFactor() { return measuredFPS >= 100 ? 1.4 : (measuredFPS >= 60 ? 1.0 : (measuredFPS >= 40 ? .75 : .5)); }
 
 // ============================================================
-// 尺寸
+// 尺寸与位置
 // ============================================================
 function getBaseSize() { return isMobile() ? SIZE_MOBILE : SIZE_DESKTOP; }
 function getSize() { return Math.round(getBaseSize() * SCALES[S.scaleIndex]); }
 function getScalePercent() { return Math.round(SCALES[S.scaleIndex] * 100); }
-
-function applySize() {
-    document.documentElement.style.setProperty('--cp-size', getSize() + 'px');
-}
+function applySize() { document.documentElement.style.setProperty('--cp-size', getSize() + 'px'); }
 function applyScale() {
-    host.classList.add('scaling');
-    applySize();
-    var c = clampPos(S.x, S.y);
-    S.x = c.x; S.y = c.y;
+    host.classList.add('scaling'); applySize();
+    var c = clampPos(S.x, S.y); S.x = c.x; S.y = c.y;
     host.style.transform = 'translate3d(' + c.x + 'px,' + c.y + 'px,0)';
-    updateFlip();
-    void host.offsetWidth;
+    updateFlip(); void host.offsetWidth;
     requestAnimationFrame(function () { host.classList.remove('scaling'); });
     savePos(); saveScale(); updateScaleDisplay();
 }
 function saveScale() { lsSet(KEYS.scale, String(S.scaleIndex)); }
 function updateScaleDisplay() { if (scaleChk) scaleChk.textContent = getScalePercent() + '%'; }
-
-function doScaleUp() {
-    if (S.scaleIndex >= SCALES.length - 1) { showBubble(pick(MSG.scaleMax), 1400, false); return; }
-    S.scaleIndex++; applyScale(); initAudio(); SFX.pet();
-    burst('✨', 3); showBubble('🔍➕ ' + getScalePercent() + '%', 1200, false);
-}
-function doScaleDown() {
-    if (S.scaleIndex <= 0) { showBubble(pick(MSG.scaleMin), 1400, false); return; }
-    S.scaleIndex--; applyScale(); initAudio(); SFX.pet();
-    burst('✨', 3); showBubble('🔍➖ ' + getScalePercent() + '%', 1200, false);
-}
-function doScaleReset() {
-    if (S.scaleIndex === DEFAULT_SCALE_INDEX) { showBubble('已经是默认大小～', 1200, false); return; }
-    S.scaleIndex = DEFAULT_SCALE_INDEX; applyScale(); initAudio(); SFX.pet();
-    burst('📏', 3); showBubble('📏 恢复 100%', 1400, false);
-}
-
-// ============================================================
-// 位置
-// ============================================================
 function setPos(x, y, animate) {
     S.x = x; S.y = y;
-    if (animate) {
-        host.classList.add('animating');
-        clearTimeout(host._animTimer);
-        host._animTimer = setTimeout(function () { host.classList.remove('animating'); }, 600);
-    }
-    host.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
-    updateFlip();
+    if (animate) { host.classList.add('animating'); clearTimeout(host._animTimer); host._animTimer = setTimeout(function () { host.classList.remove('animating'); }, 600); }
+    host.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)'; updateFlip();
 }
 function clampPos(x, y) {
     var s = getSize();
-    return {
-        x: clamp(x, 0, Math.max(0, window.innerWidth  - s)),
-        y: clamp(y, 0, Math.max(0, window.innerHeight - s))
-    };
+    return { x: clamp(x, 0, Math.max(0, window.innerWidth - s)), y: clamp(y, 0, Math.max(0, window.innerHeight - s)) };
 }
 function updateFlip() {
     var s = getSize();
-    if (S.y < 70) host.classList.add('bubble-below');
-    else          host.classList.remove('bubble-below');
-    if (S.y + s + 70 > window.innerHeight) host.classList.add('toolbar-above');
-    else                                    host.classList.remove('toolbar-above');
+    if (S.y < 70) host.classList.add('bubble-below'); else host.classList.remove('bubble-below');
+    if (S.y + s + 70 > window.innerHeight) host.classList.add('toolbar-above'); else host.classList.remove('toolbar-above');
 }
-
-// ============================================================
-// 持久化
-// ============================================================
 function savePos() { lsSet(KEYS.pos, JSON.stringify({ x: Math.round(S.x), y: Math.round(S.y) })); }
 function saveLast() { S.last = Date.now(); lsSet(KEYS.last, String(S.last)); }
 function saveSleep() { lsSet(KEYS.sleeping, S.sleeping ? 'true' : 'false'); }
@@ -1010,163 +585,94 @@ function saveHidden() { lsSet(KEYS.hidden, S.hidden ? 'true' : 'false'); }
 function saveSound() { lsSet(KEYS.sound, S.soundOn ? 'true' : 'false'); }
 
 // ============================================================
-// 图片 / 心情
+// 图片 / 心情 / 音效
 // ============================================================
-function setImage(name) {
-    if (!IMAGES[name]) return;
-    S.face = name;
-    img.src = IMAGES[name];
-}
+function setImage(name) { if (!IMAGES[name]) return; S.face = name; img.src = IMAGES[name]; }
 function updateMoodColor() {
     var t = clamp(S.mood, 0, 100) / 100;
-    var r = Math.round(255 - t * 167);
-    var g = Math.round(140 + t * 26);
-    var b = Math.round(100 + t * 155);
+    var r = Math.round(255 - t * 167), g = Math.round(140 + t * 26), b = Math.round(100 + t * 155);
     document.documentElement.style.setProperty('--cp-accent', r + ',' + g + ',' + b);
 }
-
-// ============================================================
-// 音效
-// ============================================================
 var audioCtx = null;
-function initAudio() {
-    if (audioCtx) return;
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
-}
+function initAudio() { if (audioCtx) return; try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
 function tone(opt) {
     if (!S.soundOn || !audioCtx) return;
     try {
-        var t = audioCtx.currentTime;
-        var o = audioCtx.createOscillator();
-        var g = audioCtx.createGain();
-        o.type = opt.type || 'sine';
-        o.frequency.setValueAtTime(opt.freq || 440, t);
+        var t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = opt.type || 'sine'; o.frequency.setValueAtTime(opt.freq || 440, t);
         if (opt.slideTo) o.frequency.exponentialRampToValueAtTime(opt.slideTo, t + (opt.dur || .1));
-        g.gain.setValueAtTime(opt.gain || .3, t);
-        g.gain.exponentialRampToValueAtTime(.001, t + (opt.dur || .1));
-        o.connect(g).connect(audioCtx.destination);
-        o.start(t); o.stop(t + (opt.dur || .1));
+        g.gain.setValueAtTime(opt.gain || .3, t); g.gain.exponentialRampToValueAtTime(.001, t + (opt.dur || .1));
+        o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + (opt.dur || .1));
     } catch (e) {}
 }
 var SFX = {
-    click:  function () { tone({ freq: 660, dur: .09, type: 'triangle', gain: .3, slideTo: 880 }); },
-    pet:    function () { tone({ freq: 523, dur: .15, gain: .3, slideTo: 784 }); },
-    food:   function () { tone({ freq: 880, dur: .18, gain: .3, slideTo: 1320 }); },
-    sleep:  function () { tone({ freq: 392, dur: .4,  gain: .25, slideTo: 262 }); },
-    wake:   function () { tone({ freq: 440, dur: .25, gain: .3, slideTo: 880 }); },
-    spin:   function () { tone({ freq: 1200, dur: .35, type: 'sawtooth', gain: .025, slideTo: 400 }); },
+    click: function () { tone({ freq: 660, dur: .09, type: 'triangle', gain: .3, slideTo: 880 }); },
+    pet: function () { tone({ freq: 523, dur: .15, gain: .3, slideTo: 784 }); },
+    food: function () { tone({ freq: 880, dur: .18, gain: .3, slideTo: 1320 }); },
+    sleep: function () { tone({ freq: 392, dur: .4, gain: .25, slideTo: 262 }); },
+    wake: function () { tone({ freq: 440, dur: .25, gain: .3, slideTo: 880 }); },
+    spin: function () { tone({ freq: 1200, dur: .35, type: 'sawtooth', gain: .025, slideTo: 400 }); },
     bounce: function () { tone({ freq: 200, dur: .09, type: 'square', gain: .25, slideTo: 120 }); },
-    talk:   function () { tone({ freq: 700, dur: .08, type: 'triangle', gain: .2, slideTo: 900 }); }
+    talk: function () { tone({ freq: 700, dur: .08, type: 'triangle', gain: .2, slideTo: 900 }); }
 };
 
 // ============================================================
-// 气泡（关键：短文本不换行，长文本才换行）
+// 气泡、粒子、状态机
 // ============================================================
 function showBubble(text, duration, typewriter) {
-    duration = duration || 2600;
-    typewriter = typewriter !== false;
-    clearTimeout(S.bubbleTimer);
-    clearInterval(S.typeTimer);
-
-    // 判断是否需要换行（超过 14 个字符认为需要换行）
-    var needWrap = text.length > 14;
-    bubble.classList.toggle('long', needWrap);
-
+    duration = duration || 2600; typewriter = typewriter !== false;
+    clearTimeout(S.bubbleTimer); clearInterval(S.typeTimer);
+    var needWrap = text.length > 14; bubble.classList.toggle('long', needWrap);
     bubble.classList.add('show');
     if (!typewriter) { bubble.textContent = text; }
     else {
-        bubble.textContent = '';
-        var i = 0;
-        S.typeTimer = setInterval(function () {
-            bubble.textContent += text[i++];
-            if (i >= text.length) clearInterval(S.typeTimer);
-        }, 30);
+        bubble.textContent = ''; var i = 0;
+        S.typeTimer = setInterval(function () { bubble.textContent += text[i++]; if (i >= text.length) clearInterval(S.typeTimer); }, 30);
     }
-    S.bubbleTimer = setTimeout(function () {
-        bubble.classList.remove('show');
-    }, duration + (typewriter ? text.length * 30 : 0));
+    S.bubbleTimer = setTimeout(function () { bubble.classList.remove('show'); }, duration + (typewriter ? text.length * 30 : 0));
 }
-
-// ============================================================
-// 粒子
-// ============================================================
 function burst(emoji, count, originRect) {
     count = Math.max(1, Math.round((count || 4) * particleFactor()));
     var rect = originRect || bodyEl.getBoundingClientRect();
-    var cx = rect.left + rect.width / 2;
-    var cy = rect.top  + rect.height / 2;
+    var cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
     for (var i = 0; i < count; i++) {
         (function () {
-            var p = document.createElement('div');
-            p.className = 'cp-particle';
-            p.textContent = emoji;
-            var angle = rand(0, Math.PI * 2);
-            var dist = rand(38, 78);
-            p.style.left = cx + 'px';
-            p.style.top  = cy + 'px';
+            var p = document.createElement('div'); p.className = 'cp-particle'; p.textContent = emoji;
+            var angle = rand(0, Math.PI * 2), dist = rand(38, 78);
+            p.style.left = cx + 'px'; p.style.top = cy + 'px';
             p.style.setProperty('--dx', (Math.cos(angle) * dist).toFixed(0) + 'px');
             p.style.setProperty('--dy', (Math.sin(angle) * dist - 26).toFixed(0) + 'px');
             p.style.setProperty('--rot', rand(-50, 50).toFixed(0) + 'deg');
-            p.style.fontSize = rand(13, 21).toFixed(0) + 'px';
-            p.style.animationDelay = rand(0, .14).toFixed(2) + 's';
-            particleLayer.appendChild(p);
-            setTimeout(function () { p.remove(); }, 1500);
+            p.style.fontSize = rand(13, 21).toFixed(0) + 'px'; p.style.animationDelay = rand(0, .14).toFixed(2) + 's';
+            particleLayer.appendChild(p); setTimeout(function () { p.remove(); }, 1500);
         })();
     }
 }
-
-// ============================================================
-// 状态机
-// ============================================================
 var faceRevertTimer = null;
 function setFace(name, revertMs) {
-    setImage(name);
-    clearTimeout(faceRevertTimer);
+    setImage(name); clearTimeout(faceRevertTimer);
     if (revertMs) {
-        faceRevertTimer = setTimeout(function () {
-            if (S.sleeping) setImage('sleep');
-            else            setImage('idle1');
-        }, revertMs);
+        faceRevertTimer = setTimeout(function () { if (S.sleeping) setImage('sleep'); else setImage('idle1'); }, revertMs);
     }
 }
 
-// ============================================================
-// 待机
-// ============================================================
-setInterval(function () {
-    if (S.sleeping || S.hidden) return;
-    if (S.face === 'idle1' || S.face === 'idle2') {
-        setImage(S.face === 'idle1' ? 'idle2' : 'idle1');
-    }
-}, 1000);
-
+setInterval(function () { if (S.sleeping || S.hidden) return; if (S.face === 'idle1' || S.face === 'idle2') setImage(S.face === 'idle1' ? 'idle2' : 'idle1'); }, 1000);
 (function blinkLoop() {
     setTimeout(function () {
-        if (!S.sleeping && !S.hidden && S.face !== 'sleep' &&
-            (S.face === 'idle1' || S.face === 'idle2')) {
-            var prev = S.face;
-            setImage('blink');
-            setTimeout(function () {
-                if (S.face === 'blink') setImage(prev);
-            }, 280);
-        }
-        blinkLoop();
+        if (!S.sleeping && !S.hidden && S.face !== 'sleep' && (S.face === 'idle1' || S.face === 'idle2')) {
+            var prev = S.face; setImage('blink');
+            setTimeout(function () { if (S.face === 'blink') setImage(prev); }, 280);
+        } blinkLoop();
     }, rand(3000, 7000));
 })();
-
 function scheduleIdleAction() {
     clearTimeout(S.idleActionTimer);
     S.idleActionTimer = setTimeout(function () {
-        if (S.sleeping || S.hidden || S.dragging || S.sliding ||
-            S.dialogueOpen ||
-            Date.now() - S.last < 15000) {
-            scheduleIdleAction();
-            return;
-        }
+        if (S.sleeping || S.hidden || S.dragging || S.sliding || S.dialogueOpen || Date.now() - S.last < 15000) { scheduleIdleAction(); return; }
         var roll = Math.random();
-        if (roll < .18)      setFace('surprised', 900);
+        if (roll < .18) setFace('surprised', 900);
         else if (roll < .35) burst('💭', 2);
-        else if (roll < .5)  showBubble(pick(MSG.idle));
+        else if (roll < .5) showBubble(pick(MSG.idle));
         else if (roll < .68) roam(120, 200);
         else if (roll < .82) goSleep();
         scheduleIdleAction();
@@ -1174,156 +680,79 @@ function scheduleIdleAction() {
 }
 
 // ============================================================
-// 睡觉
+// 睡觉与点击
 // ============================================================
 function startZzz() {
     clearInterval(S.zzzTimer);
     S.zzzTimer = setInterval(function () {
         if (!S.sleeping || S.hidden) return;
-        var r = bodyEl.getBoundingClientRect();
-        var z = document.createElement('div');
-        z.className = 'cp-particle';
-        z.textContent = '💤';
-        z.style.left = (r.right - 8) + 'px';
-        z.style.top  = (r.top - 4) + 'px';
-        z.style.setProperty('--dx', rand(10, 28).toFixed(0) + 'px');
-        z.style.setProperty('--dy', '-58px');
-        z.style.setProperty('--rot', '0deg');
-        z.style.fontSize = '14px';
-        z.style.animationDuration = '2.1s';
-        particleLayer.appendChild(z);
-        setTimeout(function () { z.remove(); }, 2300);
+        var r = bodyEl.getBoundingClientRect(), z = document.createElement('div');
+        z.className = 'cp-particle'; z.textContent = '💤';
+        z.style.left = (r.right - 8) + 'px'; z.style.top = (r.top - 4) + 'px';
+        z.style.setProperty('--dx', rand(10, 28).toFixed(0) + 'px'); z.style.setProperty('--dy', '-58px');
+        z.style.setProperty('--rot', '0deg'); z.style.fontSize = '14px'; z.style.animationDuration = '2.1s';
+        particleLayer.appendChild(z); setTimeout(function () { z.remove(); }, 2300);
     }, 2200);
 }
 function stopZzz() { clearInterval(S.zzzTimer); S.zzzTimer = null; }
-
 function goSleep() {
-    if (S.sleeping) return;
-    S.sleeping = true;
-    saveSleep(); saveLast();
-    host.classList.add('sleeping');
-    host.classList.remove('idle-float');
-    setImage('sleep');
-    showBubble(pick(MSG.sleep), 2200, false);
-    startZzz();
-    SFX.sleep();
+    if (S.sleeping) return; S.sleeping = true; saveSleep(); saveLast();
+    host.classList.add('sleeping'); host.classList.remove('idle-float'); setImage('sleep');
+    showBubble(pick(MSG.sleep), 2200, false); startZzz(); SFX.sleep();
 }
 function wakeUp() {
-    if (!S.sleeping) return;
-    S.sleeping = false;
-    saveSleep(); saveLast();
-    host.classList.remove('sleeping');
-    host.classList.add('idle-float');
-    stopZzz();
-    setImage('surprised');
-    showBubble(pick(MSG.wake), 1800, false);
-    burst('✨', 3);
-    SFX.wake();
-    setTimeout(function () {
-        if (!S.sleeping && S.face === 'surprised') setImage('idle1');
-    }, 1200);
+    if (!S.sleeping) return; S.sleeping = false; saveSleep(); saveLast();
+    host.classList.remove('sleeping'); host.classList.add('idle-float'); stopZzz(); setImage('surprised');
+    showBubble(pick(MSG.wake), 1800, false); burst('✨', 3); SFX.wake();
+    setTimeout(function () { if (!S.sleeping && S.face === 'surprised') setImage('idle1'); }, 1200);
 }
-
-// ============================================================
-// 点击
-// ============================================================
 function handleClick() {
     saveLast(); initAudio();
     if (S.sleeping) { wakeUp(); return; }
     if (Date.now() - S.last > 5 * 60 * 1000) S.clicks = 0;
-    S.clicks++;
-    saveClicks();
-    S.mood = clamp(S.mood - 2, 0, 100);
-    updateMoodColor();
-
-    var msg = '', face = 'happy';
-    var n = S.clicks;
-    if (n === 1)      { msg = pick(MSG.c1); face = 'happy'; }
+    S.clicks++; saveClicks(); S.mood = clamp(S.mood - 2, 0, 100); updateMoodColor();
+    var msg = '', face = 'happy', n = S.clicks;
+    if (n === 1) { msg = pick(MSG.c1); face = 'happy'; }
     else if (n === 2) { msg = pick(MSG.c2); face = 'happy'; }
     else if (n === 3) { msg = pick(MSG.c3); face = 'surprised'; }
     else if (n === 5) { msg = pick(MSG.c5); face = 'surprised'; }
-    else if (n >= 8)  { msg = pick(MSG.c8); face = 'angry'; }
-    else              { msg = pick(MSG.idle); face = 'happy'; }
+    else if (n >= 8) { msg = pick(MSG.c8); face = 'angry'; }
+    else { msg = pick(MSG.idle); face = 'happy'; }
     if (n > 15) msg = '你戳了 ' + n + ' 次了，累不累？';
-
     if (n === 25 && lsGet(KEYS.secret) !== 'true') {
-        msg = '🎉 你解锁了隐藏彩蛋！';
-        burst('🎊', 12);
-        S.mood = 100;
-        updateMoodColor();
-        lsSet(KEYS.secret, 'true');
-        setTimeout(function () {
-            showBubble('💬 菜单里多了一个秘密选项…', 3200, false);
-        }, 2400);
-    } else if (n === 25) {
-        msg = '又戳 25 次了，你不累吗？';
-    }
-
-    setFace(face, 2400);
-    showBubble(msg);
-    host.classList.add('squash');
+        msg = '🎉 你解锁了隐藏彩蛋！'; burst('🎊', 12); S.mood = 100; updateMoodColor();
+        lsSet(KEYS.secret, 'true'); setTimeout(function () { showBubble('💬 菜单里多了一个秘密选项…', 3200, false); }, 2400);
+    } else if (n === 25) { msg = '又戳 25 次了，你不累吗？'; }
+    setFace(face, 2400); showBubble(msg); host.classList.add('squash');
     setTimeout(function () { host.classList.remove('squash'); }, 440);
-    burst(face === 'angry' ? '💢' : '✨', face === 'angry' ? 3 : 4);
-    SFX.click();
-
+    burst(face === 'angry' ? '💢' : '✨', face === 'angry' ? 3 : 4); SFX.click();
     clearTimeout(S.resetTimer);
-    S.resetTimer = setTimeout(function () {
-        if (!S.sleeping) setImage('idle1');
-        S.clicks = 0;
-        saveClicks();
-    }, 4000);
+    S.resetTimer = setTimeout(function () { if (!S.sleeping) setImage('idle1'); S.clicks = 0; saveClicks(); }, 4000);
 }
 
 // ============================================================
-// 拖拽 + 长按菜单
+// 拖拽与长按
 // ============================================================
 function startStruggle() {
-    clearInterval(S.struggleTimer);
-    var toggle = false;
-    S.struggleTimer = setInterval(function () {
-        setImage(toggle ? 'surprised' : 'angry');
-        toggle = !toggle;
-    }, 260);
+    clearInterval(S.struggleTimer); var toggle = false;
+    S.struggleTimer = setInterval(function () { setImage(toggle ? 'surprised' : 'angry'); toggle = !toggle; }, 260);
 }
-function stopStruggle() {
-    clearInterval(S.struggleTimer);
-    S.struggleTimer = null;
-    if (!S.sleeping) setImage('idle1');
-}
-
+function stopStruggle() { clearInterval(S.struggleTimer); S.struggleTimer = null; if (!S.sleeping) setImage('idle1'); }
 function onDown(e, isTouch) {
-    if (e.target.closest('.cp-toolbar') ||
-        e.target.closest('#ciwei-pet-menu') ||
-        e.target.closest('#ciwei-pet-submenu') ||
-        e.target.closest('#ciwei-pet-dialogue')) return;
+    if (e.target.closest('.cp-toolbar') || e.target.closest('#ciwei-pet-menu') || e.target.closest('#ciwei-pet-submenu') || e.target.closest('#ciwei-pet-dialogue') || e.target.closest('#ciwei-pet-settings')) return;
     if (e.button && e.button !== 0) return;
-
-    initAudio();
-    S.dragging = true;
-    S.moved = false;
-    S.longPressed = false;
-    host.classList.add('dragging');
-    host.classList.remove('idle-float', 'animating');
-
+    initAudio(); S.dragging = true; S.moved = false; S.longPressed = false;
+    host.classList.add('dragging'); host.classList.remove('idle-float', 'animating');
     var p = e.touches ? e.touches[0] : e;
-    S.sClientX = p.clientX; S.sClientY = p.clientY;
-    S.sPosX = S.x; S.sPosY = S.y;
-    S.vx = 0; S.vy = 0;
-    S.lastMoveX = p.clientX; S.lastMoveY = p.clientY;
-    S.lastMoveTime = performance.now();
-
+    S.sClientX = p.clientX; S.sClientY = p.clientY; S.sPosX = S.x; S.sPosY = S.y;
+    S.vx = 0; S.vy = 0; S.lastMoveX = p.clientX; S.lastMoveY = p.clientY; S.lastMoveTime = performance.now();
     if (!S.sleeping) startStruggle();
-
     clearTimeout(S.longPressTimer);
     if (isTouch) {
         S.longPressTimer = setTimeout(function () {
             if (!S.moved && S.dragging) {
-                S.longPressed = true;
-                S.dragging = false;
-                host.classList.remove('dragging');
-                host.classList.add('idle-float');
-                stopStruggle();
-                lastLongPressTime = performance.now();
+                S.longPressed = true; S.dragging = false; host.classList.remove('dragging');
+                host.classList.add('idle-float'); stopStruggle(); lastLongPressTime = performance.now();
                 if (navigator.vibrate) { try { navigator.vibrate(25); } catch (err) {} }
                 showMenuAt(S.sClientX, S.sClientY);
             }
@@ -1331,69 +760,42 @@ function onDown(e, isTouch) {
     }
     e.preventDefault();
 }
-
 function onMove(e) {
-    if (!S.dragging) return;
-    e.preventDefault();
+    if (!S.dragging) return; e.preventDefault();
     var p = e.touches ? e.touches[0] : e;
-    var dx = p.clientX - S.sClientX;
-    var dy = p.clientY - S.sClientY;
-    if (!S.moved && (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD)) {
-        S.moved = true;
-        clearTimeout(S.longPressTimer);
-    }
+    var dx = p.clientX - S.sClientX, dy = p.clientY - S.sClientY;
+    if (!S.moved && (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD)) { S.moved = true; clearTimeout(S.longPressTimer); }
     if (!S.moved) return;
-    var c = clampPos(S.sPosX + dx, S.sPosY + dy);
-    setPos(c.x, c.y, false);
-    var now = performance.now();
-    var dt = now - S.lastMoveTime;
-    if (dt > 0) {
-        S.vx = (p.clientX - S.lastMoveX) / dt * 16;
-        S.vy = (p.clientY - S.lastMoveY) / dt * 16;
-    }
-    S.lastMoveX = p.clientX; S.lastMoveY = p.clientY;
-    S.lastMoveTime = now;
+    var c = clampPos(S.sPosX + dx, S.sPosY + dy); setPos(c.x, c.y, false);
+    var now = performance.now(), dt = now - S.lastMoveTime;
+    if (dt > 0) { S.vx = (p.clientX - S.lastMoveX) / dt * 16; S.vy = (p.clientY - S.lastMoveY) / dt * 16; }
+    S.lastMoveX = p.clientX; S.lastMoveY = p.clientY; S.lastMoveTime = now;
 }
-
 function onUp() {
     clearTimeout(S.longPressTimer);
     if (S.longPressed) { S.longPressed = false; return; }
-    if (!S.dragging) return;
-    S.dragging = false;
-    host.classList.remove('dragging');
-    host.classList.add('idle-float');
+    if (!S.dragging) return; S.dragging = false; host.classList.remove('dragging'); host.classList.add('idle-float');
     stopStruggle();
     if (!S.moved) { handleClick(); return; }
     savePos(); saveLast();
-
-    var s = getSize();
-    var margin = 8;
-    var dL = S.x;
-    var dR = window.innerWidth - s - S.x;
-    var dT = S.y;
-    var dB = window.innerHeight - s - S.y;
+    var s = getSize(), margin = 8;
+    var dL = S.x, dR = window.innerWidth - s - S.x, dT = S.y, dB = window.innerHeight - s - S.y;
     var minD = Math.min(dL, dR, dT, dB);
     if (minD < 15 && minD > 0) {
-        if (minD === dL)      S.x = margin;
-        else if (minD === dR) S.x = window.innerWidth  - s - margin;
-        else if (minD === dT) S.y = margin;
-        else                  S.y = window.innerHeight - s - margin;
-        setPos(S.x, S.y, true);
-        setTimeout(savePos, 600);
-        return;
+        if (minD === dL) S.x = margin; else if (minD === dR) S.x = window.innerWidth - s - margin;
+        else if (minD === dT) S.y = margin; else S.y = window.innerHeight - s - margin;
+        setPos(S.x, S.y, true); setTimeout(savePos, 600); return;
     }
     if (Math.abs(S.vx) > .4 || Math.abs(S.vy) > .4) S.sliding = true;
 }
-
 host.addEventListener('mousedown', function (e) { onDown(e, false); });
 host.addEventListener('touchstart', function (e) { onDown(e, true); }, { passive: false });
 document.addEventListener('mousemove', onMove, { passive: false });
-document.addEventListener('mouseup',   onUp);
+document.addEventListener('mouseup', onUp);
 document.addEventListener('touchmove', onMove, { passive: false });
-document.addEventListener('touchend',  onUp);
+document.addEventListener('touchend', onUp);
 img.addEventListener('dragstart', function (e) { e.preventDefault(); });
 
-// 双击转圈
 var lastTap = 0;
 host.addEventListener('click', function (e) {
     if (S.moved) return;
@@ -1401,17 +803,9 @@ host.addEventListener('click', function (e) {
     if (now - lastTap < 300) { e.stopPropagation(); doSpin(); lastTap = 0; }
     else { lastTap = now; }
 });
-
-// 双击空白走位
 document.addEventListener('dblclick', function (e) {
-    if (e.target.closest('#ciwei-pet') ||
-        e.target.closest('#ciwei-pet-menu') ||
-        e.target.closest('#ciwei-pet-submenu') ||
-        e.target.closest('#ciwei-pet-dialogue') ||
-        e.target.closest('#ciwei-pet-restore') ||
-        e.target.closest('[class*="modal"]')) return;
-    if (S.sleeping) return;
-    walkTo(e.clientX - getSize() / 2, e.clientY - getSize() / 2);
+    if (e.target.closest('#ciwei-pet') || e.target.closest('#ciwei-pet-menu') || e.target.closest('#ciwei-pet-submenu') || e.target.closest('#ciwei-pet-dialogue') || e.target.closest('#ciwei-pet-settings') || e.target.closest('#ciwei-pet-restore')) return;
+    if (S.sleeping) return; walkTo(e.clientX - getSize() / 2, e.clientY - getSize() / 2);
 });
 
 // ============================================================
@@ -1419,561 +813,224 @@ document.addEventListener('dblclick', function (e) {
 // ============================================================
 var lastFrame = performance.now();
 function mainLoop(now) {
-    tickFPS(now);
-    var dt = (now - lastFrame) / 1000;
-    lastFrame = now;
-    if (dt > .05) dt = .05;
-
+    tickFPS(now); var dt = (now - lastFrame) / 1000; lastFrame = now; if (dt > .05) dt = .05;
     if (S.sliding && !S.dragging) {
-        var friction = Math.pow(.06, dt);
-        S.vx *= friction; S.vy *= friction;
+        var friction = Math.pow(.06, dt); S.vx *= friction; S.vy *= friction;
         if (Math.abs(S.vx) < .3 && Math.abs(S.vy) < .3) {
-            S.sliding = false;
-            var c0 = clampPos(S.x, S.y);
-            setPos(c0.x, c0.y, false);
-            savePos();
+            S.sliding = false; var c0 = clampPos(S.x, S.y); setPos(c0.x, c0.y, false); savePos();
         } else {
-            var s = getSize();
-            var nx = S.x + S.vx * dt * 60;
-            var ny = S.y + S.vy * dt * 60;
-            var hit = false;
+            var s = getSize(), nx = S.x + S.vx * dt * 60, ny = S.y + S.vy * dt * 60, hit = false;
             if (nx < 0) { nx = 0; S.vx = -S.vx * .55; hit = true; }
             if (ny < 0) { ny = 0; S.vy = -S.vy * .55; hit = true; }
-            if (nx > window.innerWidth  - s) { nx = window.innerWidth  - s; S.vx = -S.vx * .55; hit = true; }
+            if (nx > window.innerWidth - s) { nx = window.innerWidth - s; S.vx = -S.vx * .55; hit = true; }
             if (ny > window.innerHeight - s) { ny = window.innerHeight - s; S.vy = -S.vy * .55; hit = true; }
             setPos(nx, ny, false);
             if (hit) {
-                host.classList.add('squash');
-                setTimeout(function () { host.classList.remove('squash'); }, 300);
+                host.classList.add('squash'); setTimeout(function () { host.classList.remove('squash'); }, 300);
                 var rect = bodyEl.getBoundingClientRect();
-                var side = nx <= 0 ? 'left' :
-                           nx >= window.innerWidth - s ? 'right' :
-                           ny <= 0 ? 'top' : 'bottom';
-                var o = side === 'left'   ? { left: rect.left - 10, top: rect.top + rect.height / 2, width: 20, height: 20 } :
-                        side === 'right'  ? { left: rect.right - 10, top: rect.top + rect.height / 2, width: 20, height: 20 } :
-                        side === 'top'    ? { left: rect.left + rect.width / 2, top: rect.top - 10, width: 20, height: 20 } :
-                                            { left: rect.left + rect.width / 2, top: rect.bottom - 10, width: 20, height: 20 };
-                burst('💨', 4, o);
-                SFX.bounce();
+                var side = nx <= 0 ? 'left' : nx >= window.innerWidth - s ? 'right' : ny <= 0 ? 'top' : 'bottom';
+                var o = side === 'left' ? { left: rect.left - 10, top: rect.top + rect.height / 2, width: 20, height: 20 } :
+                        side === 'right' ? { left: rect.right - 10, top: rect.top + rect.height / 2, width: 20, height: 20 } :
+                        side === 'top' ? { left: rect.left + rect.width / 2, top: rect.top - 10, width: 20, height: 20 } :
+                                          { left: rect.left + rect.width / 2, top: rect.bottom - 10, width: 20, height: 20 };
+                burst('💨', 4, o); SFX.bounce();
             }
         }
     }
-
     if (S.mouseActive && !S.hidden) {
         var sz = getSize();
         var lx = clamp(((S.mouseX - (S.x - 18)) / (sz + 36)) * 100, 0, 100);
         var ly = clamp(((S.mouseY - (S.y - 18)) / (sz + 36)) * 100, 0, 100);
-        lightEl.style.setProperty('--cp-light-x', lx.toFixed(1) + '%');
-        lightEl.style.setProperty('--cp-light-y', ly.toFixed(1) + '%');
+        lightEl.style.setProperty('--cp-light-x', lx.toFixed(1) + '%'); lightEl.style.setProperty('--cp-light-y', ly.toFixed(1) + '%');
     }
-
     requestAnimationFrame(mainLoop);
 }
 
 // ============================================================
-// 视线跟随
+// 视线跟随与智能避让
 // ============================================================
 document.addEventListener('mousemove', function (e) {
     S.mouseX = e.clientX; S.mouseY = e.clientY; S.mouseActive = true;
     if (isMobile() || S.dragging || S.hidden || S.sleeping) return;
-    var s = getSize();
-    var cx = S.x + s / 2;
-    var cy = S.y + s / 2;
-    var dx = (e.clientX - cx) / window.innerWidth;
-    var dy = (e.clientY - cy) / window.innerHeight;
-    var rx = clamp(dy * 14, -9, 9);
-    var ry = clamp(-dx * 14, -9, 9);
+    var s = getSize(), cx = S.x + s / 2, cy = S.y + s / 2;
+    var dx = (e.clientX - cx) / window.innerWidth, dy = (e.clientY - cy) / window.innerHeight;
+    var rx = clamp(dy * 14, -9, 9), ry = clamp(-dx * 14, -9, 9);
     tiltEl.style.transform = 'perspective(500px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
 });
-document.addEventListener('mouseleave', function () {
-    S.mouseActive = false;
-    tiltEl.style.transform = '';
-});
-host.addEventListener('mouseenter', function () {
-    if (!isMobile() && !S.dragging && !S.sleeping && !S.hidden) {
-        tiltEl.style.transform += ' scale(1.04)';
-    }
-});
-host.addEventListener('mouseleave', function () {
-    if (!S.dragging) tiltEl.style.transform = '';
-});
-
-// ============================================================
-// 智能避让
-// ============================================================
+document.addEventListener('mouseleave', function () { S.mouseActive = false; tiltEl.style.transform = ''; });
+host.addEventListener('mouseenter', function () { if (!isMobile() && !S.dragging && !S.sleeping && !S.hidden) tiltEl.style.transform += ' scale(1.04)'; });
+host.addEventListener('mouseleave', function () { if (!S.dragging) tiltEl.style.transform = ''; });
 document.addEventListener('mousemove', function (e) {
     if (isMobile() || S.dragging || S.sleeping || S.hidden || S.dialogueOpen) return;
     if (performance.now() < S.avoidCooldown) return;
-    var s = getSize();
-    var cx = S.x + s / 2;
-    var cy = S.y + s / 2;
+    var s = getSize(), cx = S.x + s / 2, cy = S.y + s / 2;
     var dist = Math.hypot(e.clientX - cx, e.clientY - cy);
     if (dist < 85 && !S.avoidTimer) {
         S.avoidTimer = setTimeout(function () {
             if (S.dragging || S.sleeping || S.dialogueOpen) { S.avoidTimer = null; return; }
-            var dx = cx - e.clientX;
-            var dy = cy - e.clientY;
-            var len = Math.hypot(dx, dy) || 1;
-            var md = 46;
-            var tx = S.x + (dx / len) * md;
-            var ty = S.y + (dy / len) * md;
-            var c = clampPos(tx, ty);
-            if (Math.hypot(c.x - S.x, c.y - S.y) > 15) {
-                setPos(c.x, c.y, true);
-                setTimeout(savePos, 600);
-            }
-            S.avoidCooldown = performance.now() + 8000;
-            S.avoidTimer = null;
+            var dx = cx - e.clientX, dy = cy - e.clientY, len = Math.hypot(dx, dy) || 1, md = 46;
+            var tx = S.x + (dx / len) * md, ty = S.y + (dy / len) * md, c = clampPos(tx, ty);
+            if (Math.hypot(c.x - S.x, c.y - S.y) > 15) { setPos(c.x, c.y, true); setTimeout(savePos, 600); }
+            S.avoidCooldown = performance.now() + 8000; S.avoidTimer = null;
         }, 900);
-    } else if (dist > 120) {
-        clearTimeout(S.avoidTimer);
-        S.avoidTimer = null;
-    }
+    } else if (dist > 120) { clearTimeout(S.avoidTimer); S.avoidTimer = null; }
 });
 
 // ============================================================
-// 动作
+// 动作函数
 // ============================================================
-function doPet() {
-    saveLast(); initAudio();
-    S.mood = clamp(S.mood + 8, 0, 100); updateMoodColor();
-    if (S.sleeping) { wakeUp(); return; }
-    setFace('happy', 1600);
-    showBubble(pick(MSG.pet), 1800, false);
-    burst('❤️', 5);
-    SFX.pet();
-}
-function doFood() {
-    saveLast(); initAudio();
-    S.mood = clamp(S.mood + 12, 0, 100); updateMoodColor();
-    if (S.sleeping) wakeUp();
-    setFace('happy', 1800);
-    showBubble(pick(MSG.food), 1800, false);
-    burst('🍎', 4);
-    SFX.food();
-}
-function doSleepToggle() {
-    saveLast(); initAudio();
-    if (S.sleeping) wakeUp(); else goSleep();
-}
-function doSpin() {
-    saveLast(); initAudio();
-    if (S.sleeping) wakeUp();
-    host.classList.add('spin');
-    setFace('happy', 1500);
-    showBubble(pick(MSG.spin), 1600, false);
-    burst('💫', 5);
-    SFX.spin();
-    setTimeout(function () { host.classList.remove('spin'); }, 880);
-}
-function roam(maxX, maxY) {
-    if (S.sleeping || S.dragging || S.sliding || S.dialogueOpen) return;
-    var dirX = Math.random() < .5 ? -1 : 1;
-    var dirY = Math.random() < .5 ? -1 : 1;
-    var dx = dirX * rand(maxX * .4, maxX);
-    var dy = dirY * rand(maxY * .4, maxY);
-    var target = clampPos(S.x + dx, S.y + dy);
-    if (Math.hypot(target.x - S.x, target.y - S.y) < 40) return;
-    walkTo(target.x, target.y);
-}
-function doRoam() {
-    saveLast();
-    if (S.sleeping) wakeUp();
-    showBubble(pick(MSG.roam), 1500, false);
-    roam(150, 250);
-}
+function doPet() { saveLast(); initAudio(); S.mood = clamp(S.mood + 8, 0, 100); updateMoodColor(); if (S.sleeping) { wakeUp(); return; } setFace('happy', 1600); showBubble(pick(MSG.pet), 1800, false); burst('❤️', 5); SFX.pet(); }
+function doFood() { saveLast(); initAudio(); S.mood = clamp(S.mood + 12, 0, 100); updateMoodColor(); if (S.sleeping) wakeUp(); setFace('happy', 1800); showBubble(pick(MSG.food), 1800, false); burst('🍎', 4); SFX.food(); }
+function doSleepToggle() { saveLast(); initAudio(); if (S.sleeping) wakeUp(); else goSleep(); }
+function doSpin() { saveLast(); initAudio(); if (S.sleeping) wakeUp(); host.classList.add('spin'); setFace('happy', 1500); showBubble(pick(MSG.spin), 1600, false); burst('💫', 5); SFX.spin(); setTimeout(function () { host.classList.remove('spin'); }, 880); }
+function roam(maxX, maxY) { if (S.sleeping || S.dragging || S.sliding || S.dialogueOpen) return; var dirX = Math.random() < .5 ? -1 : 1, dirY = Math.random() < .5 ? -1 : 1; var dx = dirX * rand(maxX * .4, maxX), dy = dirY * rand(maxY * .4, maxY); var target = clampPos(S.x + dx, S.y + dy); if (Math.hypot(target.x - S.x, target.y - S.y) < 40) return; walkTo(target.x, target.y); }
+function doRoam() { saveLast(); if (S.sleeping) wakeUp(); showBubble(pick(MSG.roam), 1500, false); roam(150, 250); }
 function walkTo(tx, ty) {
-    if (S.sleeping) return;
-    var c = clampPos(tx, ty);
-    var sx = S.x, sy = S.y;
-    var dist = Math.hypot(c.x - sx, c.y - sy);
-    var dur = clamp(dist * 4, 400, 1800);
-    var startTime = performance.now();
-    S.sliding = false;
+    if (S.sleeping) return; var c = clampPos(tx, ty), sx = S.x, sy = S.y;
+    var dist = Math.hypot(c.x - sx, c.y - sy), dur = clamp(dist * 4, 400, 1800), startTime = performance.now(); S.sliding = false;
     function step(now) {
-        var t = Math.min(1, (now - startTime) / dur);
-        var e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-        var nx = sx + (c.x - sx) * e;
-        var ny = sy + (c.y - sy) * e;
-        setPos(nx, ny, false);
-        var b = Math.sin(t * Math.PI * 8) * 2.5;
-        bodyEl.style.transform = 'translateY(' + b + 'px)';
-        if (t < 1) {
-            requestAnimationFrame(step);
-        } else {
-            bodyEl.style.transform = '';
-            savePos();
-        }
-    }
-    requestAnimationFrame(step);
+        var t = Math.min(1, (now - startTime) / dur), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        var nx = sx + (c.x - sx) * e, ny = sy + (c.y - sy) * e; setPos(nx, ny, false);
+        var b = Math.sin(t * Math.PI * 8) * 2.5; bodyEl.style.transform = 'translateY(' + b + 'px)';
+        if (t < 1) requestAnimationFrame(step); else { bodyEl.style.transform = ''; savePos(); }
+    } requestAnimationFrame(step);
 }
-function doReset() {
-    saveLast(); initAudio();
-    if (S.sleeping) wakeUp();
-    var s = getSize();
-    var tx = window.innerWidth  - s - 24;
-    var ty = window.innerHeight - s - 24;
-    setPos(tx, ty, true);
-    showBubble('归位！', 1500, false);
-    burst('🏠', 3);
-    setTimeout(savePos, 600);
-}
-function doHide() {
-    S.hidden = true; saveHidden();
-    host.classList.add('hidden');
-    restoreBtn.classList.add('show');
-}
-function doShow() {
-    S.hidden = false; saveHidden();
-    host.classList.remove('hidden');
-    restoreBtn.classList.remove('show');
-}
+function doReset() { saveLast(); initAudio(); if (S.sleeping) wakeUp(); var s = getSize(); setPos(window.innerWidth - s - 24, window.innerHeight - s - 24, true); showBubble('归位！', 1500, false); burst('🏠', 3); setTimeout(savePos, 600); }
+function doHide() { S.hidden = true; saveHidden(); host.classList.add('hidden'); restoreBtn.classList.add('show'); }
+function doShow() { S.hidden = false; saveHidden(); host.classList.remove('hidden'); restoreBtn.classList.remove('show'); }
 
 // ============================================================
-// 对话系统（关键修复：面板保留，气泡显示答案）
+// 对话与 AI 系统
 // ============================================================
-function getAskedList() {
-    var raw = lsGet(KEYS.asked);
-    if (!raw) return [];
-    try { return JSON.parse(raw) || []; } catch (e) { return []; }
-}
-function markAsked(id) {
-    var list = getAskedList();
-    if (list.indexOf(id) === -1) {
-        list.push(id);
-        lsSet(KEYS.asked, JSON.stringify(list));
-    }
-}
-function isSecretUnlocked() {
-    return lsGet(KEYS.secret) === 'true';
-}
-
+function getAskedList() { var raw = lsGet(KEYS.asked); if (!raw) return []; try { return JSON.parse(raw) || []; } catch (e) { return []; } }
+function markAsked(id) { var list = getAskedList(); if (list.indexOf(id) === -1) { list.push(id); lsSet(KEYS.asked, JSON.stringify(list)); } }
+function isSecretUnlocked() { return lsGet(KEYS.secret) === 'true'; }
 function buildDialogueMenu() {
-    var asked = getAskedList();
-    var secretOK = isSecretUnlocked();
-    var html = '';
+    var asked = getAskedList(), secretOK = isSecretUnlocked(), html = '';
     for (var i = 0; i < DIALOGUES.length; i++) {
-        var d = DIALOGUES[i];
-        if (d.hidden && !secretOK) continue;
-        var cls = 'cp-dlg-item';
-        if (asked.indexOf(d.id) !== -1) cls += ' asked';
-        if (d.hidden) cls += ' secret';
-        html += '<div class="' + cls + '" data-dlg-id="' + d.id + '">' +
-                '<span class="cp-dlg-icon">' + d.icon + '</span>' +
-                '<span>' + d.q + '</span>' +
-                '</div>';
+        var d = DIALOGUES[i]; if (d.hidden && !secretOK) continue;
+        var cls = 'cp-dlg-item'; if (asked.indexOf(d.id) !== -1) cls += ' asked'; if (d.hidden) cls += ' secret';
+        html += '<div class="' + cls + '" data-dlg-id="' + d.id + '"><span class="cp-dlg-icon">' + d.icon + '</span><span>' + d.q + '</span></div>';
     }
     dlgBody.innerHTML = html;
 }
-
 function showDialogueAt() {
-    S.dialogueOpen = true;
-    buildDialogueMenu();
-
-    var s = getSize();
-    var px = S.x + s + 8;
-    var py = S.y;
-
-    dialogue.style.left = px + 'px';
-    dialogue.style.top  = py + 'px';
-    dialogue.classList.add('show');
-
+    S.dialogueOpen = true; buildDialogueMenu();
+    var s = getSize(), px = S.x + s + 8, py = S.y;
+    dialogue.style.left = px + 'px'; dialogue.style.top = py + 'px'; dialogue.classList.add('show');
     var dr = dialogue.getBoundingClientRect();
-
-    if (px + dr.width > window.innerWidth - 8) {
-        var leftX = S.x - dr.width - 8;
-        if (leftX < 8) leftX = Math.max(8, window.innerWidth - dr.width - 8);
-        dialogue.style.left = leftX + 'px';
-    }
-    if (py + dr.height > window.innerHeight - 8) {
-        dialogue.style.top = Math.max(8, window.innerHeight - dr.height - 8) + 'px';
-    }
+    if (px + dr.width > window.innerWidth - 8) { var leftX = S.x - dr.width - 8; if (leftX < 8) leftX = Math.max(8, window.innerWidth - dr.width - 8); dialogue.style.left = leftX + 'px'; }
+    if (py + dr.height > window.innerHeight - 8) { dialogue.style.top = Math.max(8, window.innerHeight - dr.height - 8) + 'px'; }
     if (parseFloat(dialogue.style.top) < 8) dialogue.style.top = '8px';
+    clearTimeout(S.avoidTimer); S.avoidTimer = null; S.avoidCooldown = performance.now() + 60000;
+}
+function hideDialogue() { dialogue.classList.remove('show'); S.dialogueOpen = false; S.avoidCooldown = performance.now() + 2000; }
 
-    clearTimeout(S.avoidTimer);
-    S.avoidTimer = null;
-    S.avoidCooldown = performance.now() + 60000;
+// 4. 设置面板逻辑
+function showSettingsAt() {
+    settings.classList.add('show');
+    var s = getSize(), px = S.x + s + 8, py = S.y;
+    settings.style.left = px + 'px'; settings.style.top = py + 'px';
+    var sr = settings.getBoundingClientRect();
+    if (px + sr.width > window.innerWidth - 8) { var leftX = S.x - sr.width - 8; if (leftX < 8) leftX = Math.max(8, window.innerWidth - sr.width - 8); settings.style.left = leftX + 'px'; }
+    if (py + sr.height > window.innerHeight - 8) { settings.style.top = Math.max(8, window.innerHeight - sr.height - 8) + 'px'; }
+    if (parseFloat(settings.style.top) < 8) settings.style.top = '8px';
+    // 填充设置面板
+    var key = lsGet(KEYS.aiKey);
+    document.getElementById('cp-set-key-status').textContent = key ? '已配置 (' + key.slice(0, 7) + '...)' : '未配置';
+    document.getElementById('cp-set-key').value = key || '';
+    document.getElementById('cp-set-model').querySelectorAll('button').forEach(function (btn) {
+        btn.classList.toggle('active', btn.dataset.model === (lsGet(KEYS.aiModel) || 'flash'));
+    });
+    document.getElementById('cp-set-temp').value = lsGet(KEYS.aiTemp) || '0.7';
+    document.getElementById('cp-temp-val').textContent = lsGet(KEYS.aiTemp) || '0.7';
+    document.getElementById('cp-set-ctx').value = lsGet(KEYS.aiCtx) || '10';
+    document.getElementById('cp-ctx-val').textContent = lsGet(KEYS.aiCtx) || '10';
+    var streamOn = lsGet(KEYS.aiStream) !== 'false';
+    document.getElementById('cp-set-stream').textContent = streamOn ? '开启' : '关闭';
+    document.getElementById('cp-set-stream').className = streamOn ? 'primary' : '';
 }
 
-function hideDialogue() {
-    dialogue.classList.remove('show');
-    S.dialogueOpen = false;
-    // 恢复避让
-    S.avoidCooldown = performance.now() + 2000;
-}
-
-// 点击对话项（关键：不关闭面板，气泡显示答案）
+// 绑定对话项点击
 dlgBody.addEventListener('click', function (e) {
-    var item = e.target.closest('[data-dlg-id]');
-    if (!item) return;
-    e.stopPropagation();
-    var id = item.getAttribute('data-dlg-id');
-    var d = null;
-    for (var i = 0; i < DIALOGUES.length; i++) {
-        if (DIALOGUES[i].id === id) { d = DIALOGUES[i]; break; }
-    }
+    var item = e.target.closest('[data-dlg-id]'); if (!item) return; e.stopPropagation();
+    var id = item.getAttribute('data-dlg-id'), d = null;
+    for (var i = 0; i < DIALOGUES.length; i++) { if (DIALOGUES[i].id === id) { d = DIALOGUES[i]; break; } }
     if (!d) return;
-
-    initAudio();
-    SFX.talk();
-
-    // ⭐ 关键：不关闭面板，标记这条为"正在回复"
-    var prevReplying = dlgBody.querySelector('.replying');
-    if (prevReplying) prevReplying.classList.remove('replying');
+    initAudio(); SFX.talk();
+    var prevReplying = dlgBody.querySelector('.replying'); if (prevReplying) prevReplying.classList.remove('replying');
     item.classList.add('replying');
-
-    // 刺猬回复
     var text = fillTemplate(d.a);
-    if (!S.sleeping) {
-        setFace(d.face || 'happy', 3000);
-    }
+    if (!S.sleeping) setFace(d.face || 'happy', 3000);
     showBubble(text, 4000, true);
-
-    // 心情加成
-    S.mood = clamp(S.mood + 4, 0, 100);
-    updateMoodColor();
-    saveLast();
-
-    // 标记已问
-    markAsked(id);
-
-    // 粒子反馈
-    if (d.hidden) {
-        burst('🎉', 8);
-    } else {
-        burst('💬', 2);
-    }
-
-    // 回复完成后：取消正在回复标记，刷新菜单（变灰）
+    S.mood = clamp(S.mood + 4, 0, 100); updateMoodColor(); saveLast(); markAsked(id);
+    burst(d.hidden ? '🎉' : '💬', d.hidden ? 8 : 2);
     clearTimeout(S.replyTimer);
-    S.replyTimer = setTimeout(function () {
-        item.classList.remove('replying');
-        buildDialogueMenu();
-    }, 4200);
+    S.replyTimer = setTimeout(function () { item.classList.remove('replying'); buildDialogueMenu(); }, 4200);
 });
-
-dlgClose.addEventListener('click', function (e) {
-    e.stopPropagation();
-    hideDialogue();
-});
+dlgClose.addEventListener('click', function (e) { e.stopPropagation(); hideDialogue(); });
+setClose.addEventListener('click', function (e) { e.stopPropagation(); settings.classList.remove('show'); });
 
 // ============================================================
-// 工具栏
+// 文本指令与 AI 发送
 // ============================================================
-toolbar.addEventListener('click', function (e) {
-    var btn = e.target.closest('.cp-toolbar-btn');
-    if (!btn) return;
-    e.stopPropagation();
-    var act = btn.dataset.action;
-    if (act === 'love')       doPet();
-    else if (act === 'food')  doFood();
-    else if (act === 'sleep') doSleepToggle();
-    else if (act === 'dialogue') showDialogueAt();
-    else if (act === 'reset') doReset();
-});
-toolbar.addEventListener('mouseenter', function () { host.classList.add('show-toolbar'); });
-toolbar.addEventListener('mouseleave', function () { host.classList.remove('show-toolbar'); });
-restoreBtn.addEventListener('click', doShow);
-
-// ============================================================
-// 菜单（一级横排 + 二级折叠）
-// ============================================================
-function showMenuAt(x, y) {
-    menu.style.left = x + 'px';
-    menu.style.top  = y + 'px';
-    menu.classList.add('show');
-    submenu.classList.remove('show');
-
-    var mr = menu.getBoundingClientRect();
-    // 右侧溢出 → 左移
-    if (x + mr.width > window.innerWidth - 8) {
-        menu.style.left = Math.max(8, window.innerWidth - mr.width - 8) + 'px';
-    }
-    // 底部溢出 → 上移
-    if (y + mr.height > window.innerHeight - 8) {
-        menu.style.top = Math.max(8, y - mr.height - 8) + 'px';
-    }
-    if (parseFloat(menu.style.top) < 8) menu.style.top = '8px';
-}
-
-function showSubmenu() {
-    var mr = menu.getBoundingClientRect();
-    // 二级菜单紧贴一级菜单下方
-    var sx = mr.left;
-    var sy = mr.bottom + 4;
-    submenu.style.left = sx + 'px';
-    submenu.style.top  = sy + 'px';
-    submenu.classList.add('show');
-
-    // 更新显示
-    soundChk.textContent = S.soundOn ? '开启' : '关闭';
-    updateScaleDisplay();
-
-    // 边界调整
-    var sr = submenu.getBoundingClientRect();
-    if (sx + sr.width > window.innerWidth - 8) {
-        submenu.style.left = Math.max(8, window.innerWidth - sr.width - 8) + 'px';
-    }
-    if (sy + sr.height > window.innerHeight - 8) {
-        // 放到一级菜单上方
-        submenu.style.top = Math.max(8, mr.top - sr.height - 4) + 'px';
-    }
-}
-
-host.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
-    if (isMobile()) return;
-    showMenuAt(e.clientX, e.clientY);
-});
-
-menu.addEventListener('click', function (e) {
-    var item = e.target.closest('[data-menu]');
-    if (!item) return;
-    e.stopPropagation();
-    var act = item.dataset.menu;
-
-    if (act === 'more') {
-        // 切换二级菜单
-        if (submenu.classList.contains('show')) {
-            submenu.classList.remove('show');
-        } else {
-            showSubmenu();
-        }
-        return;
-    }
-
-    // 一级菜单动作 → 立即执行并关闭
-    if (act === 'love')       { doPet(); menu.classList.remove('show'); }
-    else if (act === 'food')  { doFood(); menu.classList.remove('show'); }
-    else if (act === 'dialogue') {
-        menu.classList.remove('show');
-        submenu.classList.remove('show');
-        setTimeout(function () { showDialogueAt(); }, 60);
-    }
-    else if (act === 'sleep') { doSleepToggle(); menu.classList.remove('show'); }
-    else if (act === 'spin')  { doSpin(); menu.classList.remove('show'); }
-});
-
-submenu.addEventListener('click', function (e) {
-    var item = e.target.closest('[data-menu]');
-    if (!item) return;
-    e.stopPropagation();
-    var act = item.dataset.menu;
-
-    if (act === 'roam')        { doRoam(); submenu.classList.remove('show'); menu.classList.remove('show'); }
-    else if (act === 'reset')  { doReset(); submenu.classList.remove('show'); menu.classList.remove('show'); }
-    else if (act === 'hide')   { doHide(); submenu.classList.remove('show'); menu.classList.remove('show'); }
-    else if (act === 'scale-up')    { doScaleUp(); }
-    else if (act === 'scale-down')  { doScaleDown(); }
-    else if (act === 'scale-reset') { doScaleReset(); }
-    else if (act === 'sound') {
-        S.soundOn = !S.soundOn; saveSound();
-        soundChk.textContent = S.soundOn ? '开启' : '关闭';
-        item.classList.toggle('active', S.soundOn);
-        if (S.soundOn) { initAudio(); SFX.pet(); }
-    }
-    // fps 纯展示
-});
-
-document.addEventListener('click', function (e) {
-    if (performance.now() - lastLongPressTime < 600) return;
-    var inMenu = e.target.closest('#ciwei-pet-menu');
-    var inSub  = e.target.closest('#ciwei-pet-submenu');
-    var inDlg  = e.target.closest('#ciwei-pet-dialogue');
-    var inPet  = e.target.closest('#ciwei-pet');
-
-    if (!inMenu && !inSub && !inPet) {
-        menu.classList.remove('show');
-        submenu.classList.remove('show');
-    }
-    // 对话面板不自动关闭
-});
-
-// ============================================================
-// 【新增模块】AI 对话、指令拦截、工具调用、图片压缩
-// ============================================================
-
-// 1. 获取北京时间和天气
-async function getEnvironmentInfo() {
-    var now = new Date();
-    var timeStr = now.toLocaleString('zh-CN', { hour12: false });
-    var weatherStr = "未知";
-    try {
-        // 免 Key 免费天气接口
-        var res = await fetch('https://wttr.in/?format=%C+%t');
-        weatherStr = await res.text();
-    } catch(e) {
-        weatherStr = "天气接口超时";
-    }
-    return "\n【系统提示：当前真实时间是 " + timeStr + "，当前用户所在地天气是 " + weatherStr + "。如果用户问天气或时间，请根据此信息回答。】";
-}
-
-// 2. 文本指令拦截（不消耗 Token）
 function checkKeywordsAndAction(text) {
-    if (text.includes('转两圈') || text.includes('转个圈')) {
-        doSpin(); // 直接调用原有的转圈动画
-        showBubble('嗡嗡！看我转两圈~ 头晕啦！', 2000, false);
-        return true; // 拦截成功
-    }
-    if (text.includes('睡觉') || text.includes('困了')) {
-        doSleepToggle();
-        return true;
-    }
+    if (text.includes('转两圈') || text.includes('转个圈')) { doSpin(); showBubble('嗡嗡！看我转两圈~ 头晕啦！', 2000, false); return true; }
+    if (text.includes('睡觉') || text.includes('困了')) { doSleepToggle(); return true; }
+    if (text.includes('摸摸头') || text.includes('摸头')) { doPet(); return true; }
     return false;
 }
 
-// 3. 处理发送消息
+async function getEnvironmentInfo() {
+    var now = new Date(), timeStr = now.toLocaleString('zh-CN', { hour12: false }), weatherStr = "未知";
+    try { var res = await fetch('https://wttr.in/?format=%C+%t'); weatherStr = await res.text(); } catch(e) { weatherStr = "天气接口超时"; }
+    return "\n【系统提示：当前真实时间是 " + timeStr + "，当前用户所在地天气是 " + weatherStr + "。如果用户问天气或时间，请根据此信息回答。】";
+}
+
+// 全局变量：用于存储最近几轮对话历史
+var chatHistory = [];
+
 async function sendMessage() {
     var inputEl = document.getElementById('cp-chat-input');
     var text = inputEl.value.trim();
     if (!text) return;
     inputEl.value = '';
-    
-    // === 新增：如果没填 Key，就弹窗要 ===
-    var apiKey = localStorage.getItem('ciwei_ai_key');
-    if (!apiKey) {
-        apiKey = prompt("🦔 小c需要接入DeepSeek大脑！\n请输入你的 API Key (sk- 开头):");
-        if (apiKey) {
-            localStorage.setItem('ciwei_ai_key', apiKey.trim());
-            showBubble('嗡嗡！我记住钥匙啦，这就来！', 2000, false);
-        } else {
-            showBubble('没有钥匙，我动不了啦…快去弄一个吧！', 3000, false);
-            return;
-        }
-    }
-    // ==============================
-    
-    // 如果是本地指令，直接执行并返回
+
+    // 1. 本地指令拦截
     if (checkKeywordsAndAction(text)) return;
-    
-    // ... 下面的代码保持不变 ...
-    var inputEl = document.getElementById('cp-chat-input');
-    var text = inputEl.value.trim();
-    if (!text) return;
-    inputEl.value = '';
-    
-    // 如果是本地指令，直接执行并返回
-    if (checkKeywordsAndAction(text)) return;
-    
-    // 显示用户气泡
-    showBubble('你: ' + text, 3000, false);
-    
-    // 读取配置和 Key
-    var apiKey = localStorage.getItem('ciwei_ai_key') || '';
+
+    // 2. 检查 Key
+    var apiKey = lsGet(KEYS.aiKey);
     if (!apiKey) {
-        showBubble('嗡嗡... 我还没有装上 AI 大脑，请先在后台配置里填入 Key 哦！', 4000, false);
+        showBubble('嗡嗡... 我还没有装上 AI 大脑，请先在【设置】里填入 Key 哦！', 4000, false);
         return;
     }
 
-    showBubble('让我想想...', 2000, false);
-    
-    // 获取环境信息（时间/天气）
+    // 显示用户气泡
+    showBubble('你: ' + text, 3000, false);
+
+    // 获取参数
+    var model = lsGet(KEYS.aiModel) === 'pro' ? 'deepseek-v4-pro' : 'deepseek-v4-flash';
+    var temp = parseFloat(lsGet(KEYS.aiTemp) || '0.7');
+    var maxCtx = parseInt(lsGet(KEYS.aiCtx) || '10', 10);
+    var streamOn = lsGet(KEYS.aiStream) !== 'false';
+
+    // 获取环境信息
     var envInfo = await getEnvironmentInfo();
-    
-    // 构建系统提示词（注入小c人设 + 环境信息）
+
+    // 构建系统提示词
     var systemPrompt = "你叫小c，是一只可爱的电子刺猬，住在 CiweiHome 里。你的开发者是 LouFoong，你的生日是 2026年9月10日。你说话简短、俏皮、温暖，偶尔会撒娇。回复控制在 50 字以内，不要用 markdown 格式。不要堆砌 emoji，最多一个。" + envInfo;
 
-    // 调用 DeepSeek API（这里默认用 Flash 满血版，加了防抖和错误处理）
+    // 构建 messages 历史
+    var messages = [{ role: 'system', content: systemPrompt }];
+    var recentHistory = chatHistory.slice(-maxCtx * 2);
+    for (var i = 0; i < recentHistory.length; i++) {
+        messages.push(recentHistory[i]);
+    }
+    messages.push({ role: 'user', content: text });
+
+    showBubble('让我想想...', 2000, false);
+
     try {
         var response = await fetch('https://api.deepseek.com/chat/completions', {
             method: 'POST',
@@ -1982,13 +1039,10 @@ async function sendMessage() {
                 'Authorization': 'Bearer ' + apiKey
             },
             body: JSON.stringify({
-                model: 'deepseek-v4-flash', // 满血 Flash
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: text }
-                ],
-                stream: true, // 开启流式输出
-                temperature: 0.7,
+                model: model,
+                messages: messages,
+                stream: streamOn,
+                temperature: temp,
                 max_tokens: 1024
             })
         });
@@ -1998,259 +1052,266 @@ async function sendMessage() {
             throw new Error('HTTP ' + response.status + ': ' + err);
         }
 
-        // 流式接收
-        var reader = response.body.getReader();
-        var decoder = new TextDecoder();
         var reply = '';
-        showBubble('', 10000, false); // 清空气泡准备接收
-        
-        while (true) {
-            var { done, value } = await reader.read();
-            if (done) break;
-            var chunk = decoder.decode(value, { stream: true });
-            var lines = chunk.split('\n');
-            for (var i = 0; i < lines.length; i++) {
-                if (lines[i].startsWith('data: ')) {
-                    var dataStr = lines[i].slice(6);
-                    if (dataStr === '[DONE]') continue;
-                    try {
-                        var data = JSON.parse(dataStr);
-                        var content = data.choices[0].delta.content || '';
-                        reply += content;
-                        bubble.textContent = reply; // 实时更新气泡
-                    } catch (e) {}
+        if (streamOn) {
+            // 流式接收
+            var reader = response.body.getReader();
+            var decoder = new TextDecoder();
+            showBubble('', 10000, false);
+            while (true) {
+                var { done, value } = await reader.read();
+                if (done) break;
+                var chunk = decoder.decode(value, { stream: true });
+                var lines = chunk.split('\n');
+                for (var i = 0; i < lines.length; i++) {
+                    if (lines[i].startsWith('data: ')) {
+                        var dataStr = lines[i].slice(6);
+                        if (dataStr === '[DONE]') continue;
+                        try {
+                            var data = JSON.parse(dataStr);
+                            var content = data.choices[0].delta.content || '';
+                            reply += content;
+                            bubble.textContent = reply;
+                        } catch (e) {}
+                    }
                 }
             }
+        } else {
+            // 非流式接收
+            var json = await response.json();
+            reply = json.choices[0].message.content;
+            showBubble(reply, 6000, true);
         }
+
+        // 记录对话历史
+        chatHistory.push({ role: 'user', content: text });
+        chatHistory.push({ role: 'assistant', content: reply });
+        if (chatHistory.length > 100) chatHistory.shift();
+
         S.mood = clamp(S.mood + 5, 0, 100);
         updateMoodColor();
         burst('💬', 3);
-        
+
     } catch (e) {
         showBubble('嗡嗡... 我脑子卡壳了: ' + e.message, 4000, false);
     }
 }
 
-// 4. 绑定输入框和按钮事件（在绑定原有事件的地方加上）
+// 绑定发送按钮与回车
 document.getElementById('cp-send-btn').addEventListener('click', function(e) { e.stopPropagation(); sendMessage(); });
-document.getElementById('cp-chat-input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+document.getElementById('cp-chat-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
+
+// ============================================================
+// 设置面板交互
+// ============================================================
+document.getElementById('cp-set-key-save').addEventListener('click', function () {
+    var val = document.getElementById('cp-set-key').value.trim();
+    if (val) { lsSet(KEYS.aiKey, val); document.getElementById('cp-set-key-status').textContent = '已配置 (' + val.slice(0, 7) + '...)'; showBubble('嗡嗡！钥匙记住啦！', 2000, false); }
+    else { localStorage.removeItem(KEYS.aiKey); document.getElementById('cp-set-key-status').textContent = '未配置'; showBubble('钥匙已清除。', 2000, false); }
+});
+document.getElementById('cp-set-model').addEventListener('click', function (e) {
+    var btn = e.target.closest('button'); if (!btn) return;
+    this.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active'); lsSet(KEYS.aiModel, btn.dataset.model);
+});
+document.getElementById('cp-set-temp').addEventListener('input', function () { document.getElementById('cp-temp-val').textContent = this.value; lsSet(KEYS.aiTemp, this.value); });
+document.getElementById('cp-set-ctx').addEventListener('input', function () { document.getElementById('cp-ctx-val').textContent = this.value; lsSet(KEYS.aiCtx, this.value); });
+document.getElementById('cp-set-stream').addEventListener('click', function () {
+    var isOn = this.textContent === '开启'; this.textContent = isOn ? '关闭' : '开启';
+    this.className = isOn ? '' : 'primary'; lsSet(KEYS.aiStream, isOn ? 'false' : 'true');
 });
 
-// 5. 图片上传与压缩策略
-document.getElementById('cp-upload-btn').addEventListener('click', function(e) {
-    e.stopPropagation();
-    document.getElementById('cp-file-input').click();
+// 余额查询
+document.getElementById('cp-set-balance-btn').addEventListener('click', async function () {
+    var key = lsGet(KEYS.aiKey); if (!key) { document.getElementById('cp-set-balance').textContent = '请先配置 Key'; return; }
+    document.getElementById('cp-set-balance').textContent = '查询中...';
+    try {
+        var res = await fetch('https://api.deepseek.com/user/balance', { headers: { 'Authorization': 'Bearer ' + key } });
+        var data = await res.json();
+        if (data.balance_infos && data.balance_infos.length > 0) {
+            var info = data.balance_infos[0];
+            document.getElementById('cp-set-balance').textContent = '余额: ' + info.total_balance + ' ' + info.currency;
+        } else { document.getElementById('cp-set-balance').textContent = '查询失败: ' + JSON.stringify(data); }
+    } catch (e) { document.getElementById('cp-set-balance').textContent = '网络错误: ' + e.message; }
 });
 
-document.getElementById('cp-file-input').addEventListener('change', async function(e) {
-    var file = e.target.files[0];
-    if (!file) return;
-    
-    // 判断文件大小（比如超过 500KB 就提示压缩）
+// ============================================================
+// 图片上传与压缩
+// ============================================================
+document.getElementById('cp-upload-btn').addEventListener('click', function (e) { e.stopPropagation(); document.getElementById('cp-file-input').click(); });
+document.getElementById('cp-file-input').addEventListener('change', async function (e) {
+    var file = e.target.files[0]; if (!file) return;
+    var apiKey = lsGet(KEYS.aiKey);
+    if (!apiKey) { showBubble('我还没接上 AI 大脑，看不了图片哦～', 3000, false); return; }
+
+    function sendImageBase64(base64) {
+        showBubble('我看看这图...', 2000, false);
+        // 针对 DeepSeek V4 的图片格式（注意：实际使用时需遵循官方 API 的 image_url 规范）
+        fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+            body: JSON.stringify({
+                model: 'deepseek-v4-flash',
+                messages: [
+                    { role: 'system', content: '你是小c，一只可爱的电子刺猬。看到图片后简短俏皮地评价一下。' },
+                    { role: 'user', content: [{ type: 'text', text: '你看这张图' }, { type: 'image_url', image_url: { url: base64 } }] }
+                ]
+            })
+        }).then(function(res) { return res.json(); }).then(function(data) {
+            showBubble(data.choices[0].message.content, 5000, false);
+        }).catch(function(err) { showBubble('看图片失败: ' + err.message, 4000, false); });
+    }
+
     if (file.size > 500 * 1024) {
         var wantCompress = confirm("小c 眼睛有点小，这张图有点大 (" + (file.size/1024/1024).toFixed(1) + "MB)，要压缩一下再给我看吗？");
         if (wantCompress) {
-            // 前端 Canvas 压缩逻辑
             var reader = new FileReader();
             reader.onload = function(evt) {
                 var imgObj = new Image();
                 imgObj.onload = function() {
-                    var canvas = document.createElement('canvas');
-                    var ctx = canvas.getContext('2d');
-                    // 等比缩放，最大边长为 1024
-                    var maxSize = 1024;
-                    var width = imgObj.width;
-                    var height = imgObj.height;
-                    if (width > height && width > maxSize) {
-                        height *= maxSize / width;
-                        width = maxSize;
-                    } else if (height > maxSize) {
-                        width *= maxSize / height;
-                        height = maxSize;
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(imgObj, 0, 0, width, height);
-                    
-                    // 转换为压缩后的 Base64
+                    var canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+                    var maxSize = 1024, width = imgObj.width, height = imgObj.height;
+                    if (width > height && width > maxSize) { height *= maxSize / width; width = maxSize; }
+                    else if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+                    canvas.width = width; canvas.height = height; ctx.drawImage(imgObj, 0, 0, width, height);
                     var compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
                     showBubble('嗡嗡，图片压缩好了，我这就看！', 2000, false);
-                    // TODO: 发送给 DeepSeek 识图 API（需注意 API 兼容性，此处简化为提示）
-                    console.log('压缩后的 Base64 大小:', compressedBase64.length);
+                    sendImageBase64(compressedBase64);
                 };
                 imgObj.src = evt.target.result;
             };
             reader.readAsDataURL(file);
         } else {
-            showBubble('好吧，原图传输可能有点慢哦...', 2000, false);
+            var reader2 = new FileReader();
+            reader2.onload = function(evt) { sendImageBase64(evt.target.result); };
+            reader2.readAsDataURL(file);
         }
     } else {
-        showBubble('收到图片！我这就看~', 2000, false);
+        var reader3 = new FileReader();
+        reader3.onload = function(evt) { sendImageBase64(evt.target.result); };
+        reader3.readAsDataURL(file);
     }
-    e.target.value = ''; // 清空 input
+    e.target.value = '';
 });
 
 // ============================================================
-// 彩蛋
+// 菜单与面板绑定
+// ============================================================
+function showMenuAt(x, y) {
+    menu.style.left = x + 'px'; menu.style.top = y + 'px'; menu.classList.add('show'); submenu.classList.remove('show');
+    var mr = menu.getBoundingClientRect();
+    if (x + mr.width > window.innerWidth - 8) menu.style.left = Math.max(8, window.innerWidth - mr.width - 8) + 'px';
+    if (y + mr.height > window.innerHeight - 8) menu.style.top = Math.max(8, y - mr.height - 8) + 'px';
+    if (parseFloat(menu.style.top) < 8) menu.style.top = '8px';
+}
+function showSubmenu() {
+    var mr = menu.getBoundingClientRect(); var sx = mr.left, sy = mr.bottom + 4;
+    submenu.style.left = sx + 'px'; submenu.style.top = sy + 'px'; submenu.classList.add('show');
+    soundChk.textContent = S.soundOn ? '开启' : '关闭'; updateScaleDisplay();
+    var sr = submenu.getBoundingClientRect();
+    if (sx + sr.width > window.innerWidth - 8) submenu.style.left = Math.max(8, window.innerWidth - sr.width - 8) + 'px';
+    if (sy + sr.height > window.innerHeight - 8) submenu.style.top = Math.max(8, mr.top - sr.height - 4) + 'px';
+}
+host.addEventListener('contextmenu', function (e) { e.preventDefault(); if (isMobile()) return; showMenuAt(e.clientX, e.clientY); });
+toolbar.addEventListener('click', function (e) {
+    var btn = e.target.closest('.cp-toolbar-btn'); if (!btn) return; e.stopPropagation();
+    var act = btn.dataset.action;
+    if (act === 'love') doPet(); else if (act === 'food') doFood(); else if (act === 'sleep') doSleepToggle();
+    else if (act === 'dialogue') showDialogueAt(); else if (act === 'reset') doReset();
+});
+toolbar.addEventListener('mouseenter', function () { host.classList.add('show-toolbar'); });
+toolbar.addEventListener('mouseleave', function () { host.classList.remove('show-toolbar'); });
+restoreBtn.addEventListener('click', doShow);
+
+menu.addEventListener('click', function (e) {
+    var item = e.target.closest('[data-menu]'); if (!item) return; e.stopPropagation();
+    var act = item.dataset.menu;
+    if (act === 'more') { if (submenu.classList.contains('show')) submenu.classList.remove('show'); else showSubmenu(); return; }
+    if (act === 'settings') { menu.classList.remove('show'); submenu.classList.remove('show'); setTimeout(function () { showSettingsAt(); }, 60); return; }
+    if (act === 'love') { doPet(); menu.classList.remove('show'); }
+    else if (act === 'food') { doFood(); menu.classList.remove('show'); }
+    else if (act === 'dialogue') { menu.classList.remove('show'); submenu.classList.remove('show'); setTimeout(function () { showDialogueAt(); }, 60); }
+    else if (act === 'sleep') { doSleepToggle(); menu.classList.remove('show'); }
+    else if (act === 'spin') { doSpin(); menu.classList.remove('show'); }
+});
+submenu.addEventListener('click', function (e) {
+    var item = e.target.closest('[data-menu]'); if (!item) return; e.stopPropagation();
+    var act = item.dataset.menu;
+    if (act === 'roam') { doRoam(); submenu.classList.remove('show'); menu.classList.remove('show'); }
+    else if (act === 'reset') { doReset(); submenu.classList.remove('show'); menu.classList.remove('show'); }
+    else if (act === 'hide') { doHide(); submenu.classList.remove('show'); menu.classList.remove('show'); }
+    else if (act === 'scale-up') doScaleUp(); else if (act === 'scale-down') doScaleDown(); else if (act === 'scale-reset') doScaleReset();
+    else if (act === 'sound') {
+        S.soundOn = !S.soundOn; saveSound(); soundChk.textContent = S.soundOn ? '开启' : '关闭';
+        item.classList.toggle('active', S.soundOn); if (S.soundOn) { initAudio(); SFX.pet(); }
+    }
+});
+document.addEventListener('click', function (e) {
+    if (performance.now() - lastLongPressTime < 600) return;
+    var inMenu = e.target.closest('#ciwei-pet-menu'), inSub = e.target.closest('#ciwei-pet-submenu');
+    var inDlg = e.target.closest('#ciwei-pet-dialogue'), inSet = e.target.closest('#ciwei-pet-settings'), inPet = e.target.closest('#ciwei-pet');
+    if (!inMenu && !inSub && !inPet) { menu.classList.remove('show'); submenu.classList.remove('show'); }
+    // 面板不自动关闭
+});
+
+// ============================================================
+// 彩蛋与初始化
 // ============================================================
 function checkBirthday() {
-    var today = new Date();
-    var md = ('0' + (today.getMonth() + 1)).slice(-2) + '-' +
-             ('0' + today.getDate()).slice(-2);
-    var birthMD = PET_PROFILE.birthday.slice(5);
-    if (md === birthMD) {
-        setTimeout(function () {
-            if (S.sleeping || S.hidden) return;
-            showBubble(pick(MSG.birthday), 4000, false);
-            burst('🎂', 10);
-            burst('🎉', 6);
-            SFX.wake();
-        }, 3000);
+    var today = new Date(), md = ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+    if (md === PET_PROFILE.birthday.slice(5)) {
+        setTimeout(function () { if (S.sleeping || S.hidden) return; showBubble(pick(MSG.birthday), 4000, false); burst('🎂', 10); burst('🎉', 6); SFX.wake(); }, 3000);
     }
 }
 function checkLateNight() {
     var h = new Date().getHours();
-    if (h >= 2 && h < 5) {
-        setTimeout(function () {
-            if (S.sleeping || S.hidden) return;
-            showBubble(pick(MSG.lateNight), 3600, false);
-        }, 5000);
-    }
+    if (h >= 2 && h < 5) { setTimeout(function () { if (S.sleeping || S.hidden) return; showBubble(pick(MSG.lateNight), 3600, false); }, 5000); }
 }
 function checkLongTimeNoSee() {
     setTimeout(function () {
         if (S.sleeping || S.hidden) return;
         var idleFor = Date.now() - S.last;
-        if (idleFor > 24 * 60 * 60 * 1000) {
-            showBubble(pick(MSG.longTimeNoSee), 3200, false);
-        } else {
-            showBubble('你好呀～我是小c 🦔', 2600, false);
-        }
+        if (idleFor > 24 * 60 * 60 * 1000) showBubble(pick(MSG.longTimeNoSee), 3200, false);
+        else showBubble('你好呀～我是小c 🦔', 2600, false);
         burst('✨', 4);
     }, 1200);
 }
-
-// ============================================================
-// 后台省电
-// ============================================================
 document.addEventListener('visibilitychange', function () {
-    if (document.hidden) {
-        savePos(); saveSleep(); saveClicks();
-        lsSet(KEYS.last, String(S.last));
-    } else {
-        lastFrame = performance.now();
-    }
+    if (document.hidden) { savePos(); saveSleep(); saveClicks(); lsSet(KEYS.last, String(S.last)); }
+    else { lastFrame = performance.now(); }
 });
-
-// ============================================================
-// 恢复状态
-// ============================================================
 function restore() {
-    if (!lsGet(KEYS.meeting)) {
-        lsSet(KEYS.meeting, String(Date.now()));
-    }
+    if (!lsGet(KEYS.meeting)) lsSet(KEYS.meeting, String(Date.now()));
     var savedScale = parseInt(lsGet(KEYS.scale) || String(DEFAULT_SCALE_INDEX), 10);
-    if (isNaN(savedScale) || savedScale < 0 || savedScale >= SCALES.length) {
-        savedScale = DEFAULT_SCALE_INDEX;
-    }
-    S.scaleIndex = savedScale;
-    applySize();
-    updateScaleDisplay();
-
-    var saved = null;
-    try { saved = JSON.parse(lsGet(KEYS.pos) || 'null'); } catch (e) {}
+    if (isNaN(savedScale) || savedScale < 0 || savedScale >= SCALES.length) savedScale = DEFAULT_SCALE_INDEX;
+    S.scaleIndex = savedScale; applySize(); updateScaleDisplay();
+    var saved = null; try { saved = JSON.parse(lsGet(KEYS.pos) || 'null'); } catch (e) {}
     var s = getSize();
-    if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
-        var c = clampPos(saved.x, saved.y);
-        setPos(c.x, c.y, false);
-    } else {
-        setPos(window.innerWidth - s - 24, window.innerHeight - s - 24, false);
-    }
-
-    if (lsGet(KEYS.sleeping) === 'true') {
-        S.sleeping = true;
-        host.classList.add('sleeping');
-        setImage('sleep');
-        startZzz();
-    } else {
-        host.classList.add('idle-float');
-        setImage('idle1');
-    }
-
+    if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') { var c = clampPos(saved.x, saved.y); setPos(c.x, c.y, false); }
+    else setPos(window.innerWidth - s - 24, window.innerHeight - s - 24, false);
+    if (lsGet(KEYS.sleeping) === 'true') { S.sleeping = true; host.classList.add('sleeping'); setImage('sleep'); startZzz(); }
+    else { host.classList.add('idle-float'); setImage('idle1'); }
     S.clicks = parseInt(lsGet(KEYS.clicks) || '0', 10) || 0;
-    var last = parseInt(lsGet(KEYS.last) || '0', 10);
-    if (last > 0) S.last = last;
-
-    if (lsGet(KEYS.hidden) === 'true') {
-        S.hidden = true;
-        host.classList.add('hidden');
-        restoreBtn.classList.add('show');
-    }
-
-    S.soundOn = lsGet(KEYS.sound) !== 'false';
-    soundChk.textContent = S.soundOn ? '开启' : '关闭';
-    updateMoodColor();
+    var last = parseInt(lsGet(KEYS.last) || '0', 10); if (last > 0) S.last = last;
+    if (lsGet(KEYS.hidden) === 'true') { S.hidden = true; host.classList.add('hidden'); restoreBtn.classList.add('show'); }
+    S.soundOn = lsGet(KEYS.sound) !== 'false'; soundChk.textContent = S.soundOn ? '开启' : '关闭'; updateMoodColor();
 }
-
-// ============================================================
-// 启动
-// ============================================================
-for (var k in IMAGES) {
-    if (IMAGES.hasOwnProperty(k)) {
-        var _i = new Image(); _i.src = IMAGES[k];
-    }
-}
-
-restore();
-requestAnimationFrame(function () { host.classList.add('ready'); });
-requestAnimationFrame(mainLoop);
-scheduleIdleAction();
-
-checkLongTimeNoSee();
-checkBirthday();
-checkLateNight();
-
+for (var k in IMAGES) { if (IMAGES.hasOwnProperty(k)) { var _i = new Image(); _i.src = IMAGES[k]; } }
+restore(); requestAnimationFrame(function () { host.classList.add('ready'); }); requestAnimationFrame(mainLoop); scheduleIdleAction();
+checkLongTimeNoSee(); checkBirthday(); checkLateNight();
 var rt = null;
 window.addEventListener('resize', function () {
-    clearTimeout(rt);
-    rt = setTimeout(function () {
-        applySize();
-        var c = clampPos(S.x, S.y);
-        setPos(c.x, c.y, false);
-        savePos();
-        if (S.dialogueOpen) {
-            hideDialogue();
-            showDialogueAt();
-        }
+    clearTimeout(rt); rt = setTimeout(function () {
+        applySize(); var c = clampPos(S.x, S.y); setPos(c.x, c.y, false); savePos();
+        if (S.dialogueOpen) { hideDialogue(); showDialogueAt(); }
+        if (settings.classList.contains('show')) { settings.classList.remove('show'); showSettingsAt(); }
     }, 150);
 });
-
-window.addEventListener('beforeunload', function () {
-    savePos(); saveSleep(); saveClicks();
-    lsSet(KEYS.last, String(S.last));
-});
-
+window.addEventListener('beforeunload', function () { savePos(); saveSleep(); saveClicks(); lsSet(KEYS.last, String(S.last)); });
 console.log('%c🦔 小c · 电子宠物 已启动', 'font-size:16px;color:#58a6ff;font-weight:bold');
 console.log('⚡ ' + measuredFPS + 'fps · ' + getScalePercent() + '%');
-console.log('💬 对话保留 · 🎂 生日彩蛋 · 🌙 深夜彩蛋 · ✨ 25击彩蛋 · 📐 横排菜单');
 
 })();
-</script>
-
-<!-- 📱 PWA Service Worker -->
-<script>
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js')
-            .then(function (reg) {
-                console.log('✅ SW 已注册:', reg.scope);
-            })
-            .catch(function (err) {
-                console.warn('SW 注册失败:', err);
-            });
-    });
-}
 </script>
 
 </body>
