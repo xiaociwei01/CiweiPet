@@ -1929,6 +1929,29 @@ async function sendMessage() {
     if (!text) return;
     inputEl.value = '';
     
+    // === 新增：如果没填 Key，就弹窗要 ===
+    var apiKey = localStorage.getItem('ciwei_ai_key');
+    if (!apiKey) {
+        apiKey = prompt("🦔 小c需要接入DeepSeek大脑！\n请输入你的 API Key (sk- 开头):");
+        if (apiKey) {
+            localStorage.setItem('ciwei_ai_key', apiKey.trim());
+            showBubble('嗡嗡！我记住钥匙啦，这就来！', 2000, false);
+        } else {
+            showBubble('没有钥匙，我动不了啦…快去弄一个吧！', 3000, false);
+            return;
+        }
+    }
+    // ==============================
+    
+    // 如果是本地指令，直接执行并返回
+    if (checkKeywordsAndAction(text)) return;
+    
+    // ... 下面的代码保持不变 ...
+    var inputEl = document.getElementById('cp-chat-input');
+    var text = inputEl.value.trim();
+    if (!text) return;
+    inputEl.value = '';
+    
     // 如果是本地指令，直接执行并返回
     if (checkKeywordsAndAction(text)) return;
     
