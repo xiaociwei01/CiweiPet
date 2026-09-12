@@ -1,8 +1,8 @@
 /* ============================================================
-   CiweiPet Service Worker · v7
+   CiweiPet Service Worker · v9
    缓存：图标 + 7 张刺猬图片 + 页面
 ================================================================ */
-var CACHE_NAME = 'ciweipet-v8';
+var CACHE_NAME = 'ciweipet-v9';
 var STATIC_ASSETS = [
     './',
     './index.html',
